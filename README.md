@@ -33,7 +33,7 @@ Using the plugin
 	
 Compilance
 ==========
-Some very helpful people pointed out in [this thread](https://github.com/marijnh/acorn/issues/309) that the parser plugin is not compliane with the language [proposal at](https://tc39.github.io/ecmascript-asyncawait/).
+Some very helpful people pointed out in [this thread](https://github.com/marijnh/acorn/issues/309) that the parser plugin is not fully compliant with the language [proposal](https://tc39.github.io/ecmascript-asyncawait/).
 
 In particular `async` and `await` are defined as 'contextual keywords' that are only 'keywords' in certain circumstances, but can be used as identifiers elsewhere. This plugin does not respect this distinction and use of identifiers called 'async' and 'await' will almost certainly fail to parse correctly. However, it is successfully in use in production environments and you may find the above restrictions easy to workaround in your project.
 
