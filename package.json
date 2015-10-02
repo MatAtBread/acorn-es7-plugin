@@ -1,0 +1,26 @@
+{
+  "name": "acorn-es7-plugin",
+  "version": "1.0.0",
+  "description": "A plugin for the Acorn parser that understands the ES7 keywords async and await",
+  "main": "acorn-es7-plugin.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MatAtBread/acorn-es7-plugin.git"
+  },
+  "keywords": [
+    "acorn",
+    "parser",
+    "es7",
+    "async",
+    "await"
+  ],
+  "author": "matatbread",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MatAtBread/acorn-es7-plugin/issues"
+  },
+  "homepage": "https://github.com/MatAtBread/acorn-es7-plugin#readme"
+}
