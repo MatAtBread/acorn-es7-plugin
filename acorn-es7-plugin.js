@@ -47,15 +47,6 @@ module.exports = function(acorn) {
 								node[k] = fn[k] ;
 						}) ;
 					}
-					if (node.argument.type==='SequenceExpression') {
-						// This is a mis-parsed function call to 'async(...)'. Fix it
-						node.type = 'CallExpression';
-						node.callee = {type:'Identifier',name:'async',start:node.start,end:node.end,loc:node.loc} ;
-						node.arguments = node.argument.expressions ;
-						delete node.argument ;
-						delete node.operator ;
-						delete node.prefix ;
-					}
 				}
 				if (type==='ExpressionStatement' && node.expression.type==='FunctionExpression' && node.expression.async) {
 					es7check(node) ;
