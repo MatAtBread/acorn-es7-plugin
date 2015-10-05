@@ -31,9 +31,13 @@ Using the plugin
 	// Show the AST
 	console.log(JSON.stringify(ast,null,2)) ;
 	
-Compilance
-==========
-Some very helpful people pointed out in [this thread](https://github.com/marijnh/acorn/issues/309) that the parser plugin is not fully compliant with the language [proposal](https://tc39.github.io/ecmascript-asyncawait/).
+Options & Compliance
+====================
+The parser attempts to enforce strict contextualisation of `async` and `await`. Specifically, `async` is only a keyword if it precedes a function declaration, function expression or arrow function. `await` is only a keyword inside an `async` function. Outside of these contexts, both tokens are treated as identifiers (as they were in ES6 and earlier).
 
-In particular `async` and `await` are defined as 'contextual keywords' that are only 'keywords' in certain circumstances, but can be used as identifiers elsewhere. This plugin does not respect this distinction and use of identifiers called 'async' and 'await' will almost certainly fail to parse correctly. However, it is successfully in use in production environments and you may find the above restrictions easy to workaround in your project.
+When using the plugin, you can supply an object in place of the 'true' flag with the following options.
 
+| flag | meaning |
+|------|---------|
+| awaitAnywhere | If `await` is used outside of an async function and could not be an identifier, generate an AwaitExpression node. This typically means you can use `await` anywhere _except_ when its argument would require parentheses, as this parses to a call to 'await(....)'. |
+| asyncExits | Allow the additional sequences `async return <optional-expression>` and `async throw <optional-expression>`. These sequences are used with [nodent](https://github.com/MatAtBread/nodent). In each case, as with async functions, a standard ReturnStatement (or ThrowStatement) node is generated, with an additional member 'async' set to true.
