@@ -1,5 +1,6 @@
 var NotAsync = {} ;
-var asyncExit = /^async\s*(return|throw)/ ;
+var asyncExit = /^async[\t ]+(return|throw)/ ;
+var asyncFunction = /^async[\t ]+function/ ;
 
 /* Create a new parser derived from the specified parser, so that in the
  * event of an error we can back out and try again */
@@ -31,31 +32,43 @@ function asyncAwaitPlugin (parser,options){
 		}
 	}) ;
 
-	// NON-STANDARD EXTENSION iff. options.asyncExits is set, the 
-	// extensions 'async return <expr>?' and 'async throw <expr>?'
-	// are enabled. In each case they are the standard ESTree nodes
-	// with the flag 'async:true'
-	if (typeof options==="object" && options.asyncExits) {
-		parser.extend("parseStatement",function(base){
-			return function (declaration, topLevel) {
-				if (this.type.label==='name' && asyncExit.test(this.input.slice(this.start))){
+	parser.extend("parseStatement",function(base){
+		return function (declaration, topLevel) {
+			if (this.type.label==='name') {
+				if (asyncFunction.test(this.input.slice(this.start))) {
+					var wasAsync = this.inAsyncFunction ;
+					try {
+						this.inAsyncFunction = true ;
+						this.next() ;
+						var r = this.parseStatement(declaration, topLevel) ;
+						r.async = true ;
+						return r ;
+					} finally {
+						this.inAsyncFunction = wasAsync ;
+					}
+				} else if ((typeof options==="object" && options.asyncExits) && asyncExit.test(this.input.slice(this.start))) {
+					// NON-STANDARD EXTENSION iff. options.asyncExits is set, the 
+					// extensions 'async return <expr>?' and 'async throw <expr>?'
+					// are enabled. In each case they are the standard ESTree nodes
+					// with the flag 'async:true'
 					this.next() ;
 					var r = this.parseStatement(declaration, topLevel) ;
 					r.async = true ;
 					return r ;
 				}
-				return base.apply(this,arguments);
-			}	
-		}) ;
-	}
+			}
+			return base.apply(this,arguments);
+		}	
+	}) ;
 
 	parser.extend("parseExprAtom",function(base){
 		return function(refShorthandDefaultPos){
+			var start = this.start ;
 			var rhs,r = base.apply(this,arguments);
 			if (r.type==='Identifier') {
-				if (r.name==='async') {
+				if (r.name==='async' && !/^async[\t ]*\n/.test(this.input.slice(start))) {
 					// Is this really an async function?
-					var isAsync = parser.inAsyncFunction ;
+					var isAsync = this.inAsyncFunction ;
 					try {
 						this.inAsyncFunction = true ;
 						var pp = this ;
@@ -125,23 +138,6 @@ function asyncAwaitPlugin (parser,options){
 				}
 			}
 			return r ;
-		}
-	}) ;
-
-	parser.extend("finishNode",function(base){
-		return function(node,type){
-			ret = base.call(this,node,type);
-			if (type==='ExpressionStatement' && node.expression.type==='FunctionExpression' && node.expression.async) {
-				es7check(node) ;
-				var fn = node.expression ;
-				fn.type = 'FunctionDeclaration' ;
-				delete node.expression ;
-				Object.keys(fn).forEach(function(k){
-					if (k!=='start')
-						node[k] = fn[k] ;
-				}) ;
-			} 
-			return ret ;
 		}
 	}) ;
 
