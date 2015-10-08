@@ -148,6 +148,12 @@ function asyncAwaitPlugin (parser,options){
 				es7check(prop) ;
 				prop.async = true ;
 				key = base.apply(this,arguments) ;
+				if (key.type==='Identifier') {
+					if (key.name==='constructor')
+						this.raise(key.start,"'constructor()' cannot be be async") ;
+					else if (key.name==='set')
+						this.raise(key.start,"'set <member>(value)' cannot be be async") ;
+				}
 			}
 			return key;
 		};
