@@ -19,17 +19,76 @@ Adding the plugin
 	
 Using the plugin	
 
-	var code = "async function x(){ return ; }\n";
-	code += "await x(1);" ;
-	
+	var code = "async function x(){ if (x) return await(x-1) ; return 0 ; }\n";	
 	var ast = acorn.parse(code,{
-	// Specify use of the plugin
+		// Specify use of the plugin
 		plugins:{asyncawait:true},
-	// Specify the ecmaVersion
+		// Specify the ecmaVersion
 		ecmaVersion:7
 	}) ;
 	// Show the AST
 	console.log(JSON.stringify(ast,null,2)) ;
+	
+Output:
+
+	{
+		"type": "Program",
+		"body": [
+		{
+		  "type": "FunctionDeclaration",
+		  "id": {
+		    "type": "Identifier",
+		    "name": "x"
+		  },
+		  "generator": false,
+		  "expression": false,
+		  "params": [],
+		  "body": {
+		    "type": "BlockStatement",
+		    "body": [
+		      {
+		        "type": "IfStatement",
+		        "test": {
+		          "type": "Identifier",
+		          "name": "x"
+		        },
+		        "consequent": {
+		          "type": "ReturnStatement",
+		          "argument": {
+		            "type": "AwaitExpression",
+		            "operator": "await",
+		            "argument": {
+		              "type": "BinaryExpression",
+		              "left": {
+		                "type": "Identifier",
+		                "name": "x"
+		              },
+		              "operator": "-",
+		              "right": {
+		                "type": "Literal",
+		                "value": 1,
+		                "raw": "1"
+		              }
+		            }
+		          }
+		        },
+		        "alternate": null
+		      },
+		      {
+		        "type": "ReturnStatement",
+		        "argument": {
+		          "type": "Literal",
+		          "value": 0,
+		          "raw": "0"
+		        }
+		      }
+		    ]
+		  },
+		  "async": true
+		}
+		],
+		"sourceType": "script"
+	}
 	
 Options & Compliance
 ====================
