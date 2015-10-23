@@ -1,6 +1,7 @@
 var NotAsync = {} ;
 var asyncExit = /^async[\t ]+(return|throw)/ ;
 var asyncFunction = /^async[\t ]+function/ ;
+var atomOrPropertyOrLabel = /^\s*[:;]/ ;
 
 /* Create a new parser derived from the specified parser, so that in the
  * event of an error we can back out and try again */
@@ -121,6 +122,11 @@ function asyncAwaitPlugin (parser,options){
 						// NON-STANDARD EXTENSION iff. options.awaitAnywhere is true,
 						// an 'AwaitExpression' is allowed anywhere the token 'await'
 						// could not be an identifier with the name 'await'.
+
+						// Look-ahead to see if this is really a property or label called async or await
+						if (this.input.slice(r.end).match(atomOrPropertyOrLabel))
+							return r ; // This is a valid property name or label
+
 						if (typeof options==="object" && options.awaitAnywhere) {
 							var start = this.start ;
 							rhs = subParse(this,'parseExprSubscripts',this.start-4) ;
@@ -145,8 +151,8 @@ function asyncAwaitPlugin (parser,options){
 		return function (prop) {
 			var key = base.apply(this,arguments) ;
 			if (key.type === "Identifier" && key.name === "async") {
-				// Look-ahead to see if this is really a property called 'asyhc:'
-				if (!this.input.slice(key.end).match(/\s*:/)){
+				// Look-ahead to see if this is really a property or label called async or await
+				if (!this.input.slice(key.end).match(atomOrPropertyOrLabel)){
 					es7check(prop) ;
 					prop.async = true ;
 					key = base.apply(this,arguments) ;
