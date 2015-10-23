@@ -145,14 +145,17 @@ function asyncAwaitPlugin (parser,options){
 		return function (prop) {
 			var key = base.apply(this,arguments) ;
 			if (key.type === "Identifier" && key.name === "async") {
-				es7check(prop) ;
-				prop.async = true ;
-				key = base.apply(this,arguments) ;
-				if (key.type==='Identifier') {
-					if (key.name==='constructor')
-						this.raise(key.start,"'constructor()' cannot be be async") ;
-					else if (key.name==='set')
-						this.raise(key.start,"'set <member>(value)' cannot be be async") ;
+				// Look-ahead to see if this is really a property called 'asyhc:'
+				if (!this.input.slice(key.end).match(/\s*:/)){
+					es7check(prop) ;
+					prop.async = true ;
+					key = base.apply(this,arguments) ;
+					if (key.type==='Identifier') {
+						if (key.name==='constructor')
+							this.raise(key.start,"'constructor()' cannot be be async") ;
+						else if (key.name==='set')
+							this.raise(key.start,"'set <member>(value)' cannot be be async") ;
+					}
 				}
 			}
 			return key;
