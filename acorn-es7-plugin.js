@@ -2,10 +2,11 @@ var NotAsync = {} ;
 var asyncExit = /^async[\t ]+(return|throw)/ ;
 var asyncFunction = /^async[\t ]+function/ ;
 var atomOrPropertyOrLabel = /^\s*[:;]/ ;
+var asyncAtEndOfLine = /^async[\t ]*\n/ ;
 
 /* Create a new parser derived from the specified parser, so that in the
  * event of an error we can back out and try again */
-function subParse(parser, how, pos, extensions) {
+function subParse(parser, pos, extensions) {
 	var p = new parser.constructor(parser.options, parser.input, pos);
 	if (extensions)
 		for (var k in extensions)
@@ -16,7 +17,7 @@ function subParse(parser, how, pos, extensions) {
 	p.inGenerator = parser.inGenerator ;
 	p.inModule = parser.inModule ;
 	p.nextToken();
-	return p[how]();
+	return p;
 }
 
 function asyncAwaitPlugin (parser,options){
@@ -67,14 +68,15 @@ function asyncAwaitPlugin (parser,options){
 			var start = this.start ;
 			var rhs,r = base.apply(this,arguments);
 			if (r.type==='Identifier') {
-				if (r.name==='async' && !/^async[\t ]*\n/.test(this.input.slice(start))) {
+				if (r.name==='async' && !asyncAtEndOfLine.test(this.input.slice(start))) {
 					// Is this really an async function?
 					var isAsync = this.inAsyncFunction ;
 					try {
 						this.inAsyncFunction = true ;
 						var pp = this ;
 						var inBody = false ;
-						rhs = subParse(this,'parseExpression',this.start,{
+						
+						var parseHooks = {
 							parseFunctionBody:function(){
 								try {
 									var wasInBody = inBody ;
@@ -91,7 +93,9 @@ function asyncAwaitPlugin (parser,options){
 									throw inBody?ex:NotAsync ;
 								}
 							}
-						}) ;
+						} ;
+						
+						rhs = subParse(this,this.start,parseHooks).parseExpression() ;
 						if (rhs.type==='SequenceExpression')
 							rhs = rhs.expressions[0] ;
 						if (rhs.type==='FunctionExpression' || rhs.type==='FunctionDeclaration' || rhs.type==='ArrowFunctionExpression') {
@@ -129,9 +133,9 @@ function asyncAwaitPlugin (parser,options){
 
 						if (typeof options==="object" && options.awaitAnywhere) {
 							var start = this.start ;
-							rhs = subParse(this,'parseExprSubscripts',this.start-4) ;
+							rhs = subParse(this,this.start-4).parseExprSubscripts() ;
 							if (rhs.end<=start) {
-								rhs = subParse(this,'parseExprSubscripts',this.start) ;
+								rhs = subParse(this,this.start).parseExprSubscripts() ;
 								n.operator = 'await' ;
 								n.argument = rhs ;
 								n = this.finishNodeAt(n,'AwaitExpression', rhs.end, rhs.loc) ;
