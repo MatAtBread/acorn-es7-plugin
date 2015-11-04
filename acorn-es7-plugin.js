@@ -16,15 +16,22 @@ function state(p) {
 /* Create a new parser derived from the specified parser, so that in the
  * event of an error we can back out and try again */
 function subParse(parser, pos, extensions) {
-	var p = new parser.constructor(parser.options, parser.input.substring(pos), 0);
+	// NB: The Babylon constructor does NOT expect 'pos' as an argument, and so 
+	// the input needs truncation at the start position, however at present
+	// this doesn't work nicely as all the node location/start/end values
+	// are therefore offset. Consequently, this plug-in is NOT currently working 
+	// with the (undocumented) Babylon plug-in interface. 
+	var p = new parser.constructor(parser.options, parser.input, pos);
 	if (extensions)
 		for (var k in extensions)
 			p[k] = extensions[k] ;
 
-	p.inFunction = state(parser).inFunction ;
-	p.inAsyncFunction = state(parser).inAsyncFunction ;
-	p.inGenerator = state(parser).inGenerator ;
-	p.inModule = state(parser).inModule ;
+	var src = state(parser) ;
+	var dest = state(p) ;
+	['inFunction','inAsyncFunction','inAsync','inGenerator','inModule'].forEach(function(k){
+		if (k in src)
+			dest[k] = src[k] ;
+	}) ;
 	p.nextToken();
 	return p;
 }
@@ -106,12 +113,13 @@ function asyncAwaitPlugin (parser,options){
 							}
 						} ;
 						
-						rhs = subParse(this,st.start,parseHooks).parseExpression() ;
+						start = st.start ;
+						rhs = subParse(this,start,parseHooks).parseExpression() ;
 						if (rhs.type==='SequenceExpression')
 							rhs = rhs.expressions[0] ;
 						if (rhs.type==='FunctionExpression' || rhs.type==='FunctionDeclaration' || rhs.type==='ArrowFunctionExpression') {
 							rhs.async = true ;
-							st.pos = rhs.end ;
+							st.pos = rhs.end; //+start ;
 							this.next();
 							es7check(rhs) ;
 							return rhs ;
@@ -143,14 +151,14 @@ function asyncAwaitPlugin (parser,options){
 							return r ; // This is a valid property name or label
 
 						if (typeof options==="object" && options.awaitAnywhere) {
-							var start = st.start ;
-							rhs = subParse(this,st.start-4).parseExprSubscripts() ;
+							start = st.start ;
+							rhs = subParse(this,start-4).parseExprSubscripts() ;
 							if (rhs.end<=start) {
-								rhs = subParse(this,st.start).parseExprSubscripts() ;
+								rhs = subParse(this,start).parseExprSubscripts() ;
 								n.operator = 'await' ;
 								n.argument = rhs ;
 								n = this.finishNodeAt(n,'AwaitExpression', rhs.end, rhs.loc) ;
-								st.pos = rhs.end ;
+								st.pos = rhs.end;//+start ;
 								this.next();
 								es7check(n) ;
 								return n ;
