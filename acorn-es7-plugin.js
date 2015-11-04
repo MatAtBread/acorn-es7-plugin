@@ -5,11 +5,10 @@ var atomOrPropertyOrLabel = /^\s*[:;]/ ;
 var asyncAtEndOfLine = /^async[\t ]*\n/ ;
 
 /* Return the object holding the parser's 'State'. This is different between acorn ('this')
- * and babylon ('this.state')
- */
+ * and babylon ('this.state') */
 function state(p) {
-	if (p.state && p.state.constructor.name==='State') // Probably babylon
-		return p.state ;
+	if (('state' in p) && p.state.constructor && p.state.constructor.name==='State') 
+		return p.state ; // Probably babylon
 	return p ; // Probably acorn
 }
 
@@ -119,7 +118,7 @@ function asyncAwaitPlugin (parser,options){
 							rhs = rhs.expressions[0] ;
 						if (rhs.type==='FunctionExpression' || rhs.type==='FunctionDeclaration' || rhs.type==='ArrowFunctionExpression') {
 							rhs.async = true ;
-							st.pos = rhs.end; //+start ;
+							st.pos = rhs.end;
 							this.next();
 							es7check(rhs) ;
 							return rhs ;
@@ -158,7 +157,7 @@ function asyncAwaitPlugin (parser,options){
 								n.operator = 'await' ;
 								n.argument = rhs ;
 								n = this.finishNodeAt(n,'AwaitExpression', rhs.end, rhs.loc) ;
-								st.pos = rhs.end;//+start ;
+								st.pos = rhs.end;
 								this.next();
 								es7check(n) ;
 								return n ;
