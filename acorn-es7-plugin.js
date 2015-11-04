@@ -4,18 +4,27 @@ var asyncFunction = /^async[\t ]+function/ ;
 var atomOrPropertyOrLabel = /^\s*[:;]/ ;
 var asyncAtEndOfLine = /^async[\t ]*\n/ ;
 
+/* Return the object holding the parser's 'State'. This is different between acorn ('this')
+ * and babylon ('this.state')
+ */
+function state(p) {
+	if (p.state && p.state.constructor.name==='State') // Probably babylon
+		return p.state ;
+	return p ; // Probably acorn
+}
+
 /* Create a new parser derived from the specified parser, so that in the
  * event of an error we can back out and try again */
 function subParse(parser, pos, extensions) {
-	var p = new parser.constructor(parser.options, parser.input, pos);
+	var p = new parser.constructor(parser.options, parser.input.substring(pos), 0);
 	if (extensions)
 		for (var k in extensions)
 			p[k] = extensions[k] ;
 
-	p.inFunction = parser.inFunction ;
-	p.inAsyncFunction = parser.inAsyncFunction ;
-	p.inGenerator = parser.inGenerator ;
-	p.inModule = parser.inModule ;
+	p.inFunction = state(parser).inFunction ;
+	p.inAsyncFunction = state(parser).inAsyncFunction ;
+	p.inGenerator = state(parser).inGenerator ;
+	p.inModule = state(parser).inModule ;
 	p.nextToken();
 	return p;
 }
@@ -36,20 +45,20 @@ function asyncAwaitPlugin (parser,options){
 
 	parser.extend("parseStatement",function(base){
 		return function (declaration, topLevel) {
-			var type = this.type || this.state.type ;
-			if (type.label==='name') {
-				if (asyncFunction.test(this.input.slice(this.start))) {
-					var wasAsync = this.inAsyncFunction ;
+			var st = state(this) ;
+			if (st.type.label==='name') {
+				if (asyncFunction.test(st.input.slice(st.start))) {
+					var wasAsync = st.inAsyncFunction ;
 					try {
-						this.inAsyncFunction = true ;
+						st.inAsyncFunction = true ;
 						this.next() ;
 						var r = this.parseStatement(declaration, topLevel) ;
 						r.async = true ;
 						return r ;
 					} finally {
-						this.inAsyncFunction = wasAsync ;
+						st.inAsyncFunction = wasAsync ;
 					}
-				} else if ((typeof options==="object" && options.asyncExits) && asyncExit.test(this.input.slice(this.start))) {
+				} else if ((typeof options==="object" && options.asyncExits) && asyncExit.test(st.input.slice(st.start))) {
 					// NON-STANDARD EXTENSION iff. options.asyncExits is set, the 
 					// extensions 'async return <expr>?' and 'async throw <expr>?'
 					// are enabled. In each case they are the standard ESTree nodes
@@ -66,14 +75,15 @@ function asyncAwaitPlugin (parser,options){
 
 	parser.extend("parseExprAtom",function(base){
 		return function(refShorthandDefaultPos){
-			var start = this.start ;
+			var st = state(this) ;
+			var start = st.start ;
 			var rhs,r = base.apply(this,arguments);
 			if (r.type==='Identifier') {
-				if (r.name==='async' && !asyncAtEndOfLine.test(this.input.slice(start))) {
+				if (r.name==='async' && !asyncAtEndOfLine.test(st.input.slice(start))) {
 					// Is this really an async function?
-					var isAsync = this.inAsyncFunction ;
+					var isAsync = st.inAsyncFunction ;
 					try {
-						this.inAsyncFunction = true ;
+						st.inAsyncFunction = true ;
 						var pp = this ;
 						var inBody = false ;
 						
@@ -96,12 +106,12 @@ function asyncAwaitPlugin (parser,options){
 							}
 						} ;
 						
-						rhs = subParse(this,this.start,parseHooks).parseExpression() ;
+						rhs = subParse(this,st.start,parseHooks).parseExpression() ;
 						if (rhs.type==='SequenceExpression')
 							rhs = rhs.expressions[0] ;
 						if (rhs.type==='FunctionExpression' || rhs.type==='FunctionDeclaration' || rhs.type==='ArrowFunctionExpression') {
 							rhs.async = true ;
-							this.pos = rhs.end ;
+							st.pos = rhs.end ;
 							this.next();
 							es7check(rhs) ;
 							return rhs ;
@@ -111,12 +121,12 @@ function asyncAwaitPlugin (parser,options){
 							throw ex ;
 					}
 					finally {
-						this.inAsyncFunction = isAsync ;
+						st.inAsyncFunction = isAsync ;
 					}
 				}
 				else if (r.name==='await') {
 					var n = this.startNode() ;
-					if (this.inAsyncFunction) {
+					if (st.inAsyncFunction) {
 						rhs = this.parseExprSubscripts() ;
 						n.operator = 'await' ;
 						n.argument = rhs ;
@@ -129,18 +139,18 @@ function asyncAwaitPlugin (parser,options){
 						// could not be an identifier with the name 'await'.
 
 						// Look-ahead to see if this is really a property or label called async or await
-						if (this.input.slice(r.end).match(atomOrPropertyOrLabel))
+						if (st.input.slice(r.end).match(atomOrPropertyOrLabel))
 							return r ; // This is a valid property name or label
 
 						if (typeof options==="object" && options.awaitAnywhere) {
-							var start = this.start ;
-							rhs = subParse(this,this.start-4).parseExprSubscripts() ;
+							var start = st.start ;
+							rhs = subParse(this,st.start-4).parseExprSubscripts() ;
 							if (rhs.end<=start) {
-								rhs = subParse(this,this.start).parseExprSubscripts() ;
+								rhs = subParse(this,st.start).parseExprSubscripts() ;
 								n.operator = 'await' ;
 								n.argument = rhs ;
 								n = this.finishNodeAt(n,'AwaitExpression', rhs.end, rhs.loc) ;
-								this.pos = rhs.end ;
+								st.pos = rhs.end ;
 								this.next();
 								es7check(n) ;
 								return n ;
@@ -154,10 +164,11 @@ function asyncAwaitPlugin (parser,options){
 
 	parser.extend("parsePropertyName",function(base){
 		return function (prop) {
+			var st = state(this) ;
 			var key = base.apply(this,arguments) ;
 			if (key.type === "Identifier" && key.name === "async") {
 				// Look-ahead to see if this is really a property or label called async or await
-				if (!this.input.slice(key.end).match(atomOrPropertyOrLabel)){
+				if (!st.input.slice(key.end).match(atomOrPropertyOrLabel)){
 					es7check(prop) ;
 					prop.async = true ;
 					key = base.apply(this,arguments) ;
