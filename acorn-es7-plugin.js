@@ -36,7 +36,8 @@ function asyncAwaitPlugin (parser,options){
 
 	parser.extend("parseStatement",function(base){
 		return function (declaration, topLevel) {
-			if (this.type.label==='name') {
+			var type = this.type || this.state.type ;
+			if (type.label==='name') {
 				if (asyncFunction.test(this.input.slice(this.start))) {
 					var wasAsync = this.inAsyncFunction ;
 					try {
