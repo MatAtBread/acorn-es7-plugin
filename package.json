@@ -1,10 +1,10 @@
 {
   "name": "acorn-es7-plugin",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A plugin for the Acorn parser that understands the ES7 keywords async and await",
   "main": "acorn-es7-plugin.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"### No tests here - 'npm install nodent' and test there\""
   },
   "repository": {
     "type": "git",
