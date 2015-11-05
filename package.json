@@ -4,7 +4,7 @@
   "description": "A plugin for the Acorn parser that understands the ES7 keywords async and await",
   "main": "acorn-es7-plugin.js",
   "scripts": {
-    "test": "echo \"### No tests here - 'npm install nodent' and test there\""
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
@@ -22,5 +22,11 @@
   "bugs": {
     "url": "https://github.com/MatAtBread/acorn-es7-plugin/issues"
   },
-  "homepage": "https://github.com/MatAtBread/acorn-es7-plugin#readme"
+  "homepage": "https://github.com/MatAtBread/acorn-es7-plugin#readme",
+  "devDependencies": {
+    "acorn": "^2.5.2",
+    "estraverse": "^4.1.1",
+    "mocha": "^2.3.3",
+    "xtend": "^4.0.1"
+  }
 }
