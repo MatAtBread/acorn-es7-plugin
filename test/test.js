@@ -1,7 +1,7 @@
 'use strict';
 
 var acorn = require('acorn');
-require('./')(acorn);
+require('../')(acorn);
 var estraverse = require('estraverse');
 var xtend = require('xtend');
 var assert = require('assert');
@@ -13,7 +13,7 @@ function find (type, ast, skip) {
   var found;
 
   estraverse.traverse(ast, {
-    enter: function (node) {
+    enter: (node) => {
       if (found) {
         return estraverse.VisitorOption.Skip;
       }
@@ -52,11 +52,11 @@ function parse(code, pluginOptions, acornOptions) {
   return acorn.parse(code, options);
 }
 
-describe('async', function () {
-  describe ('function declaration', function () {
+describe('async', () => {
+  describe ('function declaration', () => {
     var node;
 
-    beforeEach(function () {
+    beforeEach(() => {
       node = find(
         'FunctionDeclaration',
         parse([
@@ -67,34 +67,39 @@ describe('async', function () {
       );
     });
 
-    it('finds correct start location', function () {
-      assert(node.async, 'function is async');
+    it('marks the node as async', () =>
+      assert(node.async)
+    );
 
-      assert.strictEqual(node.start, 0);
+    it('finds correct start position', () =>
+      assert.strictEqual(node.start, 0)
+    );
 
+    it('finds correct end position', () =>
+      assert.strictEqual(node.end, 42)
+    );
+
+    it('finds correct start line/column', () =>
       assert.deepEqual(node.loc.start, {
         line: 1,
         column: 0
-      });
-    });
+      })
+    );
 
-    it('finds correct end location', function () {
-      assert.strictEqual(node.end, 42);
-
+    it('finds correct end line/column', () =>
       assert.deepEqual(node.loc.end, {
         line: 3,
         column: 1
-      });
-    });
+      })
+    );
   });
 });
 
-
-describe('await', function () {
-  describe('-', function () {
+describe('await', () => {
+  describe('-', () => {
     var node;
 
-    beforeEach(function () {
+    beforeEach(() => {
       node = find(
         'AwaitExpression',
         parse([
@@ -105,29 +110,33 @@ describe('await', function () {
       );
     });
 
-    it('finds correct start location', function () {
-      assert.strictEqual(node.start, 29);
+    it('finds correct start position', () =>
+      assert.strictEqual(node.start, 29)
+    );
 
+    it('finds correct end position', () =>
+      assert.strictEqual(node.end, 40)
+    );
+
+    it('finds correct start line/column', () =>
       assert.deepEqual(node.loc.start, {
         line: 2,
         column: 6
-      });
-    });
+      })
+    );
 
-    it('finds correct end location', function () {
-      assert.strictEqual(node.end, 40);
-
+    it('finds correct end line/column', () =>
       assert.deepEqual(node.loc.end, {
         line: 2,
         column: 17
-      });
-    });
+      })
+    );
   });
 
-  describe('outside a function (awaitAnywhere)', function () {
+  describe('outside a function (awaitAnywhere)', () => {
     var node;
 
-    beforeEach(function () {
+    beforeEach(() => {
       node = find(
         'AwaitExpression',
         parse(
@@ -137,23 +146,27 @@ describe('await', function () {
       );
     });
 
-    it('finds correct start location', function () {
-      assert.strictEqual(node.start, 4);
+    it('finds correct start position', () =>
+      assert.strictEqual(node.start, 4)
+    );
 
+    it('finds correct start line/column', () =>
       assert.deepEqual(node.loc.start, {
         line: 1,
         column: 4
-      });
-    });
+      })
+    );
 
-    it('finds correct end location', function () {
-      assert.strictEqual(node.end, 15);
+    it('finds correct end position', () =>
+      assert.strictEqual(node.end, 15)
+    );
 
+    it('finds correct end line/column', () =>
       assert.deepEqual(node.loc.end, {
         line: 1,
         column: 15
-      });
-    });
+      })
+    );
   });
 });
 
