@@ -120,7 +120,6 @@ function asyncAwaitPlugin (parser,options){
 							}
 						} ;
 						
-						// start = st.start ;
 						rhs = subParse(this,st.start,parseHooks).parseExpression() ;
 						if (rhs.type==='SequenceExpression')
 							rhs = rhs.expressions[0] ;
