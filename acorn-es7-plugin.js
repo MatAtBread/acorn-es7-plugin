@@ -52,6 +52,8 @@ function asyncAwaitPlugin (parser,options){
 	parser.extend("parseStatement",function(base){
 		return function (declaration, topLevel) {
 			var st = state(this) ;
+			var start = st.start;
+			var startLoc = st.startLoc;
 			if (st.type.label==='name') {
 				if (asyncFunction.test(st.input.slice(st.start))) {
 					var wasAsync = st.inAsyncFunction ;
@@ -60,6 +62,8 @@ function asyncAwaitPlugin (parser,options){
 						this.next() ;
 						var r = this.parseStatement(declaration, topLevel) ;
 						r.async = true ;
+						r.start = start;
+						r.loc && (r.loc.start = startLoc);
 						return r ;
 					} finally {
 						st.inAsyncFunction = wasAsync ;
@@ -72,6 +76,9 @@ function asyncAwaitPlugin (parser,options){
 					this.next() ;
 					var r = this.parseStatement(declaration, topLevel) ;
 					r.async = true ;
+					// TODO: This is probably required, but I don't understand nodent well enough to write a test case
+					// r.start = start;
+					// r.loc && (r.loc.start = startLoc);
 					return r ;
 				}
 			}
@@ -83,6 +90,7 @@ function asyncAwaitPlugin (parser,options){
 		return function(refShorthandDefaultPos){
 			var st = state(this) ;
 			var start = st.start ;
+			var startLoc = st.startLoc;
 			var rhs,r = base.apply(this,arguments);
 			if (r.type==='Identifier') {
 				if (r.name==='async' && !asyncAtEndOfLine.test(st.input.slice(start))) {
@@ -112,12 +120,13 @@ function asyncAwaitPlugin (parser,options){
 							}
 						} ;
 						
-						start = st.start ;
-						rhs = subParse(this,start,parseHooks).parseExpression() ;
+						rhs = subParse(this,st.start,parseHooks).parseExpression() ;
 						if (rhs.type==='SequenceExpression')
 							rhs = rhs.expressions[0] ;
 						if (rhs.type==='FunctionExpression' || rhs.type==='FunctionDeclaration' || rhs.type==='ArrowFunctionExpression') {
 							rhs.async = true ;
+							rhs.start = start;
+							rhs.loc && (rhs.loc.start = startLoc);
 							st.pos = rhs.end;
 							this.next();
 							es7check(rhs) ;
@@ -132,12 +141,12 @@ function asyncAwaitPlugin (parser,options){
 					}
 				}
 				else if (r.name==='await') {
-					var n = this.startNode() ;
+					var n = this.startNodeAt(r.start, r.loc && r.loc.start);
 					if (st.inAsyncFunction) {
 						rhs = this.parseExprSubscripts() ;
 						n.operator = 'await' ;
 						n.argument = rhs ;
-						n = this.finishNodeAt(n,'AwaitExpression', rhs.end, rhs.loc) ;
+						n = this.finishNodeAt(n,'AwaitExpression', rhs.end, rhs.loc && rhs.loc.end) ;
 						es7check(n) ;
 						return n ;
 					} else 
@@ -156,7 +165,7 @@ function asyncAwaitPlugin (parser,options){
 								rhs = subParse(this,start).parseExprSubscripts() ;
 								n.operator = 'await' ;
 								n.argument = rhs ;
-								n = this.finishNodeAt(n,'AwaitExpression', rhs.end, rhs.loc) ;
+								n = this.finishNodeAt(n,'AwaitExpression', rhs.end, rhs.loc && rhs.loc.end) ;
 								st.pos = rhs.end;
 								this.next();
 								es7check(n) ;
