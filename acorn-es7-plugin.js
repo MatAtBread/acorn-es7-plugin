@@ -7,7 +7,7 @@ var asyncAtEndOfLine = /^async[\t ]*\n/ ;
 /* Return the object holding the parser's 'State'. This is different between acorn ('this')
  * and babylon ('this.state') */
 function state(p) {
-	if (('state' in p) && p.state.constructor && p.state.constructor.name==='State') 
+	if (('state' in p) && p.state.constructor && p.state.constructor.name==='State')
 		return p.state ; // Probably babylon
 	return p ; // Probably acorn
 }
@@ -15,11 +15,11 @@ function state(p) {
 /* Create a new parser derived from the specified parser, so that in the
  * event of an error we can back out and try again */
 function subParse(parser, pos, extensions) {
-	// NB: The Babylon constructor does NOT expect 'pos' as an argument, and so 
+	// NB: The Babylon constructor does NOT expect 'pos' as an argument, and so
 	// the input needs truncation at the start position, however at present
 	// this doesn't work nicely as all the node location/start/end values
-	// are therefore offset. Consequently, this plug-in is NOT currently working 
-	// with the (undocumented) Babylon plug-in interface. 
+	// are therefore offset. Consequently, this plug-in is NOT currently working
+	// with the (undocumented) Babylon plug-in interface.
 	var p = new parser.constructor(parser.options, parser.input, pos);
 	if (extensions)
 		for (var k in extensions)
@@ -69,7 +69,7 @@ function asyncAwaitPlugin (parser,options){
 						st.inAsyncFunction = wasAsync ;
 					}
 				} else if ((typeof options==="object" && options.asyncExits) && asyncExit.test(st.input.slice(st.start))) {
-					// NON-STANDARD EXTENSION iff. options.asyncExits is set, the 
+					// NON-STANDARD EXTENSION iff. options.asyncExits is set, the
 					// extensions 'async return <expr>?' and 'async throw <expr>?'
 					// are enabled. In each case they are the standard ESTree nodes
 					// with the flag 'async:true'
@@ -82,7 +82,7 @@ function asyncAwaitPlugin (parser,options){
 				}
 			}
 			return base.apply(this,arguments);
-		}	
+		}
 	}) ;
 
 	parser.extend("parseExprAtom",function(base){
@@ -99,7 +99,7 @@ function asyncAwaitPlugin (parser,options){
 						st.inAsyncFunction = true ;
 						var pp = this ;
 						var inBody = false ;
-						
+
 						var parseHooks = {
 							parseFunctionBody:function(){
 								try {
@@ -118,7 +118,7 @@ function asyncAwaitPlugin (parser,options){
 								}
 							}
 						} ;
-						
+
 						rhs = subParse(this,st.start,parseHooks).parseExpression() ;
 						if (rhs.type==='SequenceExpression')
 							rhs = rhs.expressions[0] ;
@@ -148,7 +148,7 @@ function asyncAwaitPlugin (parser,options){
 						n = this.finishNodeAt(n,'AwaitExpression', rhs.end, rhs.loc && rhs.loc.end) ;
 						es7check(n) ;
 						return n ;
-					} else 
+					} else
 						// NON-STANDARD EXTENSION iff. options.awaitAnywhere is true,
 						// an 'AwaitExpression' is allowed anywhere the token 'await'
 						// could not be an identifier with the name 'await'.
@@ -177,6 +177,26 @@ function asyncAwaitPlugin (parser,options){
 		}
 	}) ;
 
+	parser.extend('finishNodeAt',function(base){
+			return function(node,type,pos,loc) {
+				if (node.__asyncValue) {
+					delete node.__asyncValue ;
+					node.value.async = true ;
+				}
+				return base.apply(this,arguments) ;
+			}
+	}) ;
+
+	parser.extend('finishNode',function(base){
+			return function(node,type) {
+				if (node.__asyncValue) {
+					delete node.__asyncValue ;
+					node.value.async = true ;
+				}
+				return base.apply(this,arguments) ;
+			}
+	}) ;
+
 	parser.extend("parsePropertyName",function(base){
 		return function (prop) {
 			var st = state(this) ;
@@ -185,7 +205,6 @@ function asyncAwaitPlugin (parser,options){
 				// Look-ahead to see if this is really a property or label called async or await
 				if (!st.input.slice(key.end).match(atomOrPropertyOrLabel)){
 					es7check(prop) ;
-					prop.async = true ;
 					key = base.apply(this,arguments) ;
 					if (key.type==='Identifier') {
 						if (key.name==='constructor')
@@ -193,6 +212,7 @@ function asyncAwaitPlugin (parser,options){
 						else if (key.name==='set')
 							this.raise(key.start,"'set <member>(value)' cannot be be async") ;
 					}
+					prop.__asyncValue = true ;
 				}
 			}
 			return key;
