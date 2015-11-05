@@ -76,9 +76,8 @@ function asyncAwaitPlugin (parser,options){
 					this.next() ;
 					var r = this.parseStatement(declaration, topLevel) ;
 					r.async = true ;
-					// TODO: This is probably required, but I don't understand nodent well enough to write a test case
-					// r.start = start;
-					// r.loc && (r.loc.start = startLoc);
+					r.start = start;
+					r.loc && (r.loc.start = startLoc);
 					return r ;
 				}
 			}
