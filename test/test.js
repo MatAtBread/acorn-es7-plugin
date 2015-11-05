@@ -178,6 +178,44 @@ describe('async', () => {
         })
     );
   });
+
+  describe ('ArrowFunctionExpression', () => {
+    var node, code;
+
+    beforeEach(() => {
+      code = 'var x = async () => {}';
+      node = find(
+        'ArrowFunctionExpression',
+        parse(code)
+      );
+    });
+
+    it('marks the node as async', () =>
+        assert(node.async)
+    );
+
+    it('finds correct start position', () =>
+        assert.strictEqual(node.start, 8)
+    );
+
+    it('finds correct end position', () =>
+        assert.strictEqual(node.end, code.length)
+    );
+
+    it('finds correct start line/column', () =>
+        assert.deepEqual(node.loc.start, {
+          line: 1,
+          column: 8
+        })
+    );
+
+    it('finds correct end line/column', () =>
+        assert.deepEqual(node.loc.end, {
+          line: 1,
+          column: code.length
+        })
+    );
+  });
 });
 
 describe('await', () => {
