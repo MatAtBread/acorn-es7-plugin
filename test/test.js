@@ -28,7 +28,7 @@ function find (type, ast, skip) {
   });
 
   if (!found) {
-    throw new Error('did not find AwaitExpression (skipped ' + skipped + '/' + skip);
+    throw new Error('did not find AwaitExpression (skipped ' + skipped + '/' + skip + ')');
   }
 
   return found;
@@ -83,6 +83,48 @@ describe('async', () => {
       assert.deepEqual(node.loc.start, {
         line: 1,
         column: 0
+      })
+    );
+
+    it('finds correct end line/column', () =>
+      assert.deepEqual(node.loc.end, {
+        line: 3,
+        column: 1
+      })
+    );
+  });
+
+  describe ('function expression', () => {
+    var node, code;
+
+    beforeEach(() => {
+      code = [
+        'foo = async function () {',
+        '  x = await bar()',
+        '}'
+      ];
+      node = find(
+        'FunctionExpression',
+        parse(code)
+      );
+    });
+
+    it('marks the node as async', () =>
+      assert(node.async)
+    );
+
+    it('finds correct start position', () =>
+      assert.strictEqual(node.start, 6)
+    );
+
+    it('finds correct end position', () =>
+      assert.strictEqual(node.end, code.join('\n').length)
+    );
+
+    it('finds correct start line/column', () =>
+      assert.deepEqual(node.loc.start, {
+        line: 1,
+        column: 6
       })
     );
 

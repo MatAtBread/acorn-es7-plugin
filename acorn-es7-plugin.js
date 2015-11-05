@@ -90,8 +90,7 @@ function asyncAwaitPlugin (parser,options){
 		return function(refShorthandDefaultPos){
 			var st = state(this) ;
 			var start = st.start ;
-			// TODO: Write testCase proving this is required
-			// var startLoc = st.startLoc;
+			var startLoc = st.startLoc;
 			var rhs,r = base.apply(this,arguments);
 			if (r.type==='Identifier') {
 				if (r.name==='async' && !asyncAtEndOfLine.test(st.input.slice(start))) {
@@ -121,15 +120,14 @@ function asyncAwaitPlugin (parser,options){
 							}
 						} ;
 						
-						start = st.start ;
-						rhs = subParse(this,start,parseHooks).parseExpression() ;
+						// start = st.start ;
+						rhs = subParse(this,st.start,parseHooks).parseExpression() ;
 						if (rhs.type==='SequenceExpression')
 							rhs = rhs.expressions[0] ;
 						if (rhs.type==='FunctionExpression' || rhs.type==='FunctionDeclaration' || rhs.type==='ArrowFunctionExpression') {
 							rhs.async = true ;
-							// TODO: This is probably required
-							// rhs.start = start;
-							// rhs.loc && (rhs.loc = startLoc);
+							rhs.start = start;
+							rhs.loc && (rhs.loc.start = startLoc);
 							st.pos = rhs.end;
 							this.next();
 							es7check(rhs) ;
