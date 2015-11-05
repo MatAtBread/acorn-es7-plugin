@@ -152,8 +152,12 @@ describe('async', () => {
       );
     });
 
-    it('marks the node as async', () =>
-        assert(node.async)
+    it('marks the node value as async', () =>
+        assert(node.value.async)
+    );
+
+    it('does not mark the node as async', () =>
+        assert(!node.async)
     );
 
     it('finds correct start position', () =>
@@ -292,4 +296,3 @@ describe('await', () => {
     );
   });
 });
-
