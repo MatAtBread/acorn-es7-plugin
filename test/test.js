@@ -135,6 +135,49 @@ describe('async', () => {
       })
     );
   });
+
+  describe ('enhanced object literal', () => {
+    var node, code;
+
+    beforeEach(() => {
+      code = [
+        'var x = {',
+        '  async foo() {}',
+        '};'
+      ];
+      node = find(
+        // TODO: Is it really supposed to mark the Property async? Why not the FunctionExpression?
+        'Property',
+        parse(code)
+      );
+    });
+
+    it('marks the node as async', () =>
+        assert(node.async)
+    );
+
+    it('finds correct start position', () =>
+        assert.strictEqual(node.start, 12)
+    );
+
+    it('finds correct end position', () =>
+        assert.strictEqual(node.end, code[0].length + code[1].length + 1) // + 1 is due to newline char
+    );
+
+    it('finds correct start line/column', () =>
+        assert.deepEqual(node.loc.start, {
+          line: 2,
+          column: 2
+        })
+    );
+
+    it('finds correct end line/column', () =>
+        assert.deepEqual(node.loc.end, {
+          line: 2,
+          column: 16
+        })
+    );
+  });
 });
 
 describe('await', () => {

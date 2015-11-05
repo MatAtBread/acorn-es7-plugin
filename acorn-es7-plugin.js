@@ -182,18 +182,12 @@ function asyncAwaitPlugin (parser,options){
 	parser.extend("parsePropertyName",function(base){
 		return function (prop) {
 			var st = state(this) ;
-			// TODO: This is probably required
-			// var start = st.start;
-			// var startLoc = st.startLoc;
 			var key = base.apply(this,arguments) ;
 			if (key.type === "Identifier" && key.name === "async") {
 				// Look-ahead to see if this is really a property or label called async or await
 				if (!st.input.slice(key.end).match(atomOrPropertyOrLabel)){
 					es7check(prop) ;
 					prop.async = true ;
-					// TODO: This is probably required
-					// prop.start = start;
-					// prop.loc && (prop.loc.start = startLoc);
 					key = base.apply(this,arguments) ;
 					if (key.type==='Identifier') {
 						if (key.name==='constructor')
