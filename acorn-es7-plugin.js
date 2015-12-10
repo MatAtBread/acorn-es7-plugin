@@ -45,6 +45,9 @@ function asyncAwaitPlugin (parser,options){
 					parser.raise(node.start,"async/await keywords only available when ecmaVersion>=7") ;
 				} ;
 			}
+            this.reservedWords = new RegExp(this.reservedWords.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
+            this.reservedWordsStrict = new RegExp(this.reservedWordsStrict.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
+            this.reservedWordsStrictBind = new RegExp(this.reservedWordsStrictBind.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
 			return base.apply(this,arguments);
 		}
 	}) ;
