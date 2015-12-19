@@ -1,7 +1,7 @@
 var NotAsync = {} ;
 var asyncExit = /^async[\t ]+(return|throw)/ ;
 var asyncFunction = /^async[\t ]+function/ ;
-var atomOrPropertyOrLabel = /^\s*[:;]/ ;
+var atomOrPropertyOrLabel = /^\s*[):;]/ ;
 var asyncAtEndOfLine = /^async[\t ]*\n/ ;
 
 /* Return the object holding the parser's 'State'. This is different between acorn ('this')
@@ -45,9 +45,9 @@ function asyncAwaitPlugin (parser,options){
 					parser.raise(node.start,"async/await keywords only available when ecmaVersion>=7") ;
 				} ;
 			}
-            this.reservedWords = new RegExp(this.reservedWords.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
-            this.reservedWordsStrict = new RegExp(this.reservedWordsStrict.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
-            this.reservedWordsStrictBind = new RegExp(this.reservedWordsStrictBind.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
+      this.reservedWords = new RegExp(this.reservedWords.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
+      this.reservedWordsStrict = new RegExp(this.reservedWordsStrict.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
+      this.reservedWordsStrictBind = new RegExp(this.reservedWordsStrictBind.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
 			return base.apply(this,arguments);
 		}
 	}) ;
@@ -88,6 +88,19 @@ function asyncAwaitPlugin (parser,options){
 		}
 	}) ;
 
+  parser.extend("parseIdent",function(base){
+		return function(liberal){
+				var id = base.apply(this,arguments);
+				var st = state(this) ;
+				if (st.inAsyncFunction && id.name==='await') {
+					if (arguments.length===0) {
+						this.raise(id.start,"'await' is reserved within async functions") ;
+					}
+				}
+				return id ;
+		}
+	}) ;
+
 	parser.extend("parseExprAtom",function(base){
 		return function(refShorthandDefaultPos){
 			var st = state(this) ;
@@ -104,7 +117,7 @@ function asyncAwaitPlugin (parser,options){
 						var inBody = false ;
 
 						var parseHooks = {
-							parseFunctionBody:function(){
+							parseFunctionBody:function(node,isArrowFunction){
 								try {
 									var wasInBody = inBody ;
 									inBody = true ;

@@ -6,7 +6,7 @@ acorn-es7-plugin
 acorn-es7-plugin is a plugin for the [Acorn](https://github.com/marijnh/acorn) parser that generates ESTrees following the ['experimental' specification](https://github.com/estree/estree/blob/master/experimental/async-functions.md) for asynchronous functions.
 
 	npm install --save acorn-es7-plugin
-	
+
 Usage
 =====
 
@@ -16,10 +16,10 @@ Adding the plugin
 	var acorn = require("acorn");
 	// Add the es7-plugin
 	require('./acorn-es7-plugin')(acorn) ;
-	
-Using the plugin	
 
-	var code = "async function x(){ if (x) return await(x-1) ; return 0 ; }\n";	
+Using the plugin
+
+	var code = "async function x(){ if (x) return await(x-1) ; return 0 ; }\n";
 	var ast = acorn.parse(code,{
 		// Specify use of the plugin
 		plugins:{asyncawait:true},
@@ -28,7 +28,7 @@ Using the plugin
 	}) ;
 	// Show the AST
 	console.log(JSON.stringify(ast,null,2)) ;
-	
+
 Output:
 
 	{
@@ -89,7 +89,7 @@ Output:
 		],
 		"sourceType": "script"
 	}
-	
+
 Options & Compliance
 ====================
 The parser attempts to enforce strict contextualisation of `async` and `await`. Specifically, `async` is only a keyword if it precedes a function declaration, function expression or arrow function. `await` is only a keyword inside an `async` function. Outside of these contexts, both tokens are treated as identifiers (as they were in ES6 and earlier).
@@ -104,9 +104,10 @@ When using the plugin, you can supply an object in place of the 'true' flag with
 Changelog
 =========
 
+19-Dec-15: v1.0.11
+
+- Generate error if 'await' is used as an identifier within an async function.
+
 10-Dec-15: v1.0.10
 
 - Update the plugin code to remove 'async' and 'await' from the super-strict keyword tests introduced in acorn v2.6.x that generate parse errors before the plugin gets a chance to manage them.
-
- 
-
