@@ -238,4 +238,5 @@ function asyncAwaitPlugin (parser,options){
 
 module.exports = function(acorn) {
 	acorn.plugins.asyncawait = asyncAwaitPlugin ;
+	return acorn
 }
