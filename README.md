@@ -104,6 +104,10 @@ When using the plugin, you can supply an object in place of the 'true' flag with
 Changelog
 =========
 
+26-Feb-16: v1.0.12
+
+- Updated to return the original acorn object on installation. See https://github.com/MatAtBread/acorn-es7-plugin/pull/4
+
 19-Dec-15: v1.0.11
 
 - Generate error if 'await' is used as an identifier within an async function.
