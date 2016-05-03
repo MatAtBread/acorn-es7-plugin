@@ -52,6 +52,15 @@ function asyncAwaitPlugin (parser,options){
 		}
 	}) ;
 
+	parser.extend("shouldParseExportStatement",function(base){
+	    return function(){
+	        if (this.type.label==='name' && this.value==='async' && asyncFunction.test(this.input.substr(this.start))) {
+	            return true ;
+	        }
+	        return base.apply(this,arguments) ;
+	    }
+	}) ;
+	
 	parser.extend("parseStatement",function(base){
 		return function (declaration, topLevel) {
 			var st = state(this) ;

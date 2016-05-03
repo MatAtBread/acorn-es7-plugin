@@ -103,6 +103,9 @@ When using the plugin, you can supply an object in place of the 'true' flag with
 
 Changelog
 =========
+03-May-16: v1.0.13 
+
+- Correctly parse the statement `export async function name(){...}` as _async function name(){...}_ is a valid named declaration.
 
 26-Feb-16: v1.0.12
 
