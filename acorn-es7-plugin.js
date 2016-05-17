@@ -2,7 +2,10 @@ var NotAsync = {} ;
 var asyncExit = /^async[\t ]+(return|throw)/ ;
 var asyncFunction = /^async[\t ]+function/ ;
 var atomOrPropertyOrLabel = /^\s*[):;]/ ;
-var asyncAtEndOfLine = /^async[\t ]*\n/ ;
+
+function hasLineTerminatorBeforeNext(st, since) {
+	return st.lineStart >= since;
+}
 
 /* Return the object holding the parser's 'State'. This is different between acorn ('this')
  * and babylon ('this.state') */
@@ -60,7 +63,7 @@ function asyncAwaitPlugin (parser,options){
 	        return base.apply(this,arguments) ;
 	    }
 	}) ;
-	
+
 	parser.extend("parseStatement",function(base){
 		return function (declaration, topLevel) {
 			var st = state(this) ;
@@ -117,7 +120,7 @@ function asyncAwaitPlugin (parser,options){
 			var startLoc = st.startLoc;
 			var rhs,r = base.apply(this,arguments);
 			if (r.type==='Identifier') {
-				if (r.name==='async' && !asyncAtEndOfLine.test(st.input.slice(start))) {
+				if (r.name==='async' && !hasLineTerminatorBeforeNext(st, r.end)) {
 					// Is this really an async function?
 					var isAsync = st.inAsyncFunction ;
 					try {
@@ -226,7 +229,7 @@ function asyncAwaitPlugin (parser,options){
 		return function (prop) {
 			var st = state(this) ;
 			var key = base.apply(this,arguments) ;
-			if (key.type === "Identifier" && key.name === "async") {
+			if (key.type === "Identifier" && key.name === "async" && !hasLineTerminatorBeforeNext(st, key.end)) {
 				// Look-ahead to see if this is really a property or label called async or await
 				if (!st.input.slice(key.end).match(atomOrPropertyOrLabel)){
 					es7check(prop) ;
