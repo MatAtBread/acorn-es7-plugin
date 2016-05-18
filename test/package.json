@@ -4,7 +4,7 @@
   "description": "Tests for acorn-es7-plugin",
   "main": "nothing-here",
   "scripts": {
-    "test": "node test-es5.js ; mocha --opts ./mocha.opts"
+    "test": "mocha --opts ./mocha.opts ; node test-es5.js "
   },
   "repository": {
     "type": "git",
