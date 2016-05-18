@@ -2,7 +2,7 @@ var NotAsync = {} ;
 var asyncExit = /^async[\t ]+(return|throw)/ ;
 var asyncFunction = /^async[\t ]+function/ ;
 var atomOrPropertyOrLabel = /^\s*[):;]/ ;
-var removeComments = /([^\n])\/\*(\*(?!\/)|[^*])*\*\/([^\n])/g ;
+var removeComments = /([^\n])\/\*(\*(?!\/)|[^\n*])*\*\/([^\n])/g ;
 
 function hasLineTerminatorBeforeNext(st, since) {
 	return st.lineStart >= since;
@@ -10,11 +10,9 @@ function hasLineTerminatorBeforeNext(st, since) {
 
 function test(regex,st,noComment) {
 	var src = st.input.slice(st.start) ;
-//  console.log(src.match(removeComments)) ;
 	if (noComment) {
 		src = src.replace(removeComments,"$1 $3") ;
-//		console.log(src) ;
-	}
+  }
 	return regex.test(src);
 }
 
@@ -63,6 +61,9 @@ function asyncAwaitPlugin (parser,options){
       this.reservedWordsStrict = new RegExp(this.reservedWordsStrict.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
       this.reservedWordsStrictBind = new RegExp(this.reservedWordsStrictBind.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
 			this.inAsyncFunction = options.inAsyncFunction ;
+			if (options.awaitAnywhere && options.inAsyncFunction)
+				parser.raise(node.start,"The options awaitAnywhere and inAsyncFunction are mutually exclusive") ;
+
 			return base.apply(this,arguments);
 		}
 	}) ;

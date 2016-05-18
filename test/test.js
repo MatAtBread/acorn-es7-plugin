@@ -161,13 +161,13 @@ describe('async', () => {
         ]);
       });
 
-/*      it('finds Identifier ExpressionStatement', () => {
+      it('finds Identifier ExpressionStatement', () => {
         assertFindsIdentifierExpressionStatement(ast);
-      });*/
+      });
 
       it('does not mark FunctionDeclaration as async', () => {
         node = find('FunctionDeclaration', ast);
-        assert(node.async, 'Expected node.async to be true');
+        assert(!node.async, 'Expected node.async to be false');
       });
     });
   });
