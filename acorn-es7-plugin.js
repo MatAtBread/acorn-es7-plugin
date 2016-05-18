@@ -2,9 +2,14 @@ var NotAsync = {} ;
 var asyncExit = /^async[\t ]+(return|throw)/ ;
 var asyncFunction = /^async[\t ]+function/ ;
 var atomOrPropertyOrLabel = /^\s*[):;]/ ;
+var removeComments = /\/\*(\*(?!\/)|[^*])*\*\/|\/\/.*/g ;
 
 function hasLineTerminatorBeforeNext(st, since) {
 	return st.lineStart >= since;
+}
+
+function test(regex,st) {
+	return regex.test(st.input.slice(st.start).replace(removeComments," "));
 }
 
 /* Return the object holding the parser's 'State'. This is different between acorn ('this')
@@ -51,13 +56,14 @@ function asyncAwaitPlugin (parser,options){
       this.reservedWords = new RegExp(this.reservedWords.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
       this.reservedWordsStrict = new RegExp(this.reservedWordsStrict.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
       this.reservedWordsStrictBind = new RegExp(this.reservedWordsStrictBind.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
+			this.inAsyncFunction = options.inAsyncFunction ;
 			return base.apply(this,arguments);
 		}
 	}) ;
 
 	parser.extend("shouldParseExportStatement",function(base){
 	    return function(){
-	        if (this.type.label==='name' && this.value==='async' && asyncFunction.test(this.input.substr(this.start))) {
+	        if (this.type.label==='name' && this.value==='async' && test(asyncFunction,state(this))) {
 	            return true ;
 	        }
 	        return base.apply(this,arguments) ;
@@ -70,7 +76,7 @@ function asyncAwaitPlugin (parser,options){
 			var start = st.start;
 			var startLoc = st.startLoc;
 			if (st.type.label==='name') {
-				if (asyncFunction.test(st.input.slice(st.start))) {
+				if (test(asyncFunction,st)) {
 					var wasAsync = st.inAsyncFunction ;
 					try {
 						st.inAsyncFunction = true ;
@@ -83,7 +89,7 @@ function asyncAwaitPlugin (parser,options){
 					} finally {
 						st.inAsyncFunction = wasAsync ;
 					}
-				} else if ((typeof options==="object" && options.asyncExits) && asyncExit.test(st.input.slice(st.start))) {
+				} else if ((typeof options==="object" && options.asyncExits) && test(asyncExit,st)) {
 					// NON-STANDARD EXTENSION iff. options.asyncExits is set, the
 					// extensions 'async return <expr>?' and 'async throw <expr>?'
 					// are enabled. In each case they are the standard ESTree nodes
