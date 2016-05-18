@@ -2,14 +2,20 @@ var NotAsync = {} ;
 var asyncExit = /^async[\t ]+(return|throw)/ ;
 var asyncFunction = /^async[\t ]+function/ ;
 var atomOrPropertyOrLabel = /^\s*[):;]/ ;
-var removeComments = /\/\*(\*(?!\/)|[^*])*\*\/|\/\/.*/g ;
+var removeComments = /([^\n])\/\*(\*(?!\/)|[^*])*\*\/([^\n])/g ;
 
 function hasLineTerminatorBeforeNext(st, since) {
 	return st.lineStart >= since;
 }
 
-function test(regex,st) {
-	return regex.test(st.input.slice(st.start).replace(removeComments," "));
+function test(regex,st,noComment) {
+	var src = st.input.slice(st.start) ;
+//  console.log(src.match(removeComments)) ;
+	if (noComment) {
+		src = src.replace(removeComments,"$1 $3") ;
+//		console.log(src) ;
+	}
+	return regex.test(src);
 }
 
 /* Return the object holding the parser's 'State'. This is different between acorn ('this')
@@ -76,13 +82,13 @@ function asyncAwaitPlugin (parser,options){
 			var start = st.start;
 			var startLoc = st.startLoc;
 			if (st.type.label==='name') {
-				if (test(asyncFunction,st)) {
+				if (test(asyncFunction,st,true)) {
 					var wasAsync = st.inAsyncFunction ;
 					try {
 						st.inAsyncFunction = true ;
 						this.next() ;
 						var r = this.parseStatement(declaration, topLevel) ;
-						r.async = true ;
+ 						r.async = true ;
 						r.start = start;
 						r.loc && (r.loc.start = startLoc);
 						return r ;

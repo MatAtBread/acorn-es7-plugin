@@ -18,6 +18,14 @@ function parse(code, pluginOptions) {
     });
 }
 
+function isIdentThenFnDecl(ast) {
+    return ast.body[0].type === 'ExpressionStatement' && ast.body[0].expression.type === 'Identifier' && ast.body[0].expression.name === 'async' && !ast.body[1].async === true && ast.body[1].type == "FunctionDeclaration";
+}
+
+function isAsyncFnDecl(ast) {
+    return ast.body[0].async === true && ast.body[0].type == "FunctionDeclaration";
+}
+
 var tests = [
        {desc:"Simple async function",code:"async function x() { return undefined; }",
            pass:function(ast){ return ast.body[0].async===true}
@@ -51,39 +59,39 @@ var tests = [
        },
        {desc:"Await reference fails in async function",code:"async function x() { return 1+await; }",
            pass:function(ex){ return ex === "Unexpected token (1:35)" }
-       },{
-    desc: "async /* comment *\u002f function x(){} is an async FunctionDeclaration",
-    code: "async /* a *\u002f function x(){}",
-    pass: function (ast) {
-        return ast.body[0].async === true && ast.body[0].type == "FunctionDeclaration";
-    }
+ },{
+    desc: "{code} is an async FunctionDeclaration",
+    code: "async /* a */ function x(){}",
+    pass: isAsyncFnDecl
 },{
-    desc: "async /* comment *\u002f <linefeed> function x(){} is a reference to 'async' and a sync FunctionDeclaration",
-    code: "async /* a *\u002f\nfunction x(){}",
-    pass: function (ast) {
-        return ast.body[0].type === 'ExpressionStatement' && ast.body[0].expression.type === 'Identifier' && ast.body[0].expression.name === 'async' && !ast.body[1].async === true && ast.body[1].type == "FunctionDeclaration";
-    }
+    desc: "{code} is an async FunctionDeclaration",
+    code: "async /*\n*/function x(){}",
+    pass: isAsyncFnDecl
 },{
-    desc: "async <linefeed> function x(){} is a reference to 'async' and a sync FunctionDeclaration",
+    desc: "{code} is a reference to 'async' and a sync FunctionDeclaration",
+    code: "async /* a */\nfunction x(){}",
+    pass: isIdentThenFnDecl
+},{
+    desc: "{code} is a reference to 'async' and a sync FunctionDeclaration",
     code: "async\nfunction x(){}",
-    pass: function (ast) {
-        return ast.body[0].type === 'ExpressionStatement' && ast.body[0].expression.type === 'Identifier' && ast.body[0].expression.name === 'async' && !ast.body[1].async === true && ast.body[1].type == "FunctionDeclaration";
-    }
+    pass: isIdentThenFnDecl
 },{
-    desc: "async // comment <linefeed> function x(){} is a reference to 'async' and a sync FunctionDeclaration",
+    desc: "{code} is a reference to 'async' and a sync FunctionDeclaration",
     code: "async //\nfunction x(){}",
-    pass: function (ast) {
-        return ast.body[0].type === 'ExpressionStatement' && ast.body[0].expression.type === 'Identifier' && ast.body[0].expression.name === 'async' && !ast.body[1].async === true && ast.body[1].type == "FunctionDeclaration";
-    }
+    pass: isIdentThenFnDecl
 },{
-    desc: "await(x) is an AwaitExpression when inAsyncFunction option is true",
+    desc: "{code} is a reference to 'async' and a sync FunctionDeclaration",
+    code: "async /*\n*/\nfunction x(){}",
+    pass: isIdentThenFnDecl
+},{
+    desc: "{code} is an AwaitExpression when inAsyncFunction option is true",
     code: "await(x)",
     options: { inAsyncFunction: true },
     pass: function (ast) {
         return ast.body[0].type === 'ExpressionStatement' && ast.body[0].expression.type === 'AwaitExpression' ;
     }},
     {
-      desc: "await(x) is an CallExpression when inAsyncFunction option is false",
+      desc: "{code} is an CallExpression when inAsyncFunction option is false",
         code: "await(x)",
         pass: function (ast) {
             return ast.body[0].type === 'ExpressionStatement' && ast.body[0].expression.type === 'CallExpression' ;
@@ -96,10 +104,19 @@ var out = {
   false:"fail".red
 };
 
+var testNumber = +process.argv[2] || 0;
+if (testNumber) {
+    tests = [tests[testNumber-1]] ;
+} else {
+  testNumber +=1 ;
+}
+
 tests.forEach(function(test,idx){
+  var code = test.code.replace(/\n/g,' <linefeed> ') ;
+  var desc = test.desc.replace('{code}',code.yellow) ;
     try {
-        console.log((idx+1)+")\t",test.desc,test.code.replace('\n',' <linefeed> ').yellow,out[test.pass(parse(test.code,test.options))]);
+        console.log((idx+testNumber)+")\t",desc,out[test.pass(parse(test.code,test.options))]);
     } catch(ex) {
-        console.log((idx+1)+")\t",test.desc,test.code.replace('\n',' <linefeed> ').yellow,ex.message.cyan,out[test.pass(ex.message)]);
+        console.log((idx+testNumber)+")\t",desc,ex.message.cyan,out[test.pass(ex.message)]);
     }
 }) ;
