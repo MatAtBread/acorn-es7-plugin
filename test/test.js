@@ -56,169 +56,461 @@ describe('async', () => {
   describe ('function declaration', () => {
     var node;
 
-    beforeEach(() => {
-      node = find(
-        'FunctionDeclaration',
-        parse([
-          'async function foo() {',
-          '  x = await bar()',
-          '}'
-        ])
+    describe('-', () => {
+      beforeEach(() => {
+        node = find(
+          'FunctionDeclaration',
+          parse([
+            'async function foo() {',
+            '  x = await bar()',
+            '}'
+          ])
+        );
+      });
+
+      it('marks the node as async', () =>
+        assert(node.async)
+      );
+
+      it('finds correct start position', () =>
+        assert.strictEqual(node.start, 0)
+      );
+
+      it('finds correct end position', () =>
+        assert.strictEqual(node.end, 42)
+      );
+
+      it('finds correct start line/column', () =>
+        assert.deepEqual(node.loc.start, {
+          line: 1,
+          column: 0
+        })
+      );
+
+      it('finds correct end line/column', () =>
+        assert.deepEqual(node.loc.end, {
+          line: 3,
+          column: 1
+        })
       );
     });
 
-    it('marks the node as async', () =>
-      assert(node.async)
-    );
+    var assertFindsIdentifierExpressionStatement = (ast) => {
+      node = find('ExpressionStatement', ast);
+      assert.strictEqual(node.expression.type, 'Identifier');
+      assert.strictEqual(node.expression.name, 'async');
+      assert.deepEqual(node.expression.loc, {
+        start: {
+          line: 1,
+          column: 0
+        },
+        end: {
+          line: 1,
+          column: 5
+        }
+      });
+    };
 
-    it('finds correct start position', () =>
-      assert.strictEqual(node.start, 0)
-    );
+    describe('linefeed after async (simple)', () => {
+      var ast;
+      beforeEach(() => {
+        ast = parse([
+          'async \t\t  ',
+          'function foo() {',
+          '}'
+        ]);
+      });
 
-    it('finds correct end position', () =>
-      assert.strictEqual(node.end, 42)
-    );
+      it('finds Identifier ExpressionStatement', () => {
+        assertFindsIdentifierExpressionStatement(ast);
+      });
 
-    it('finds correct start line/column', () =>
-      assert.deepEqual(node.loc.start, {
-        line: 1,
-        column: 0
-      })
-    );
+      it('does not mark FunctionDeclaration as async', () => {
+        node = find('FunctionDeclaration', ast);
+        assert(!node.async, 'Expected node.async to be false');
+      });
+    });
 
-    it('finds correct end line/column', () =>
-      assert.deepEqual(node.loc.end, {
-        line: 3,
-        column: 1
-      })
-    );
+    describe('linefeed after async (single line comment)', () => {
+      var ast;
+      beforeEach(() => {
+        ast = parse([
+          'async // flag enables async completion',
+          'function foo() {',
+          '}'
+        ]);
+      });
+
+      it('finds Identifier ExpressionStatement', () => {
+        assertFindsIdentifierExpressionStatement(ast);
+      });
+
+      it('does not mark FunctionDeclaration as async', () => {
+        node = find('FunctionDeclaration', ast);
+        assert(!node.async, 'Expected node.async to be false');
+      });
+    });
+
+    describe('linefeed after async (multiline comment)', () => {
+      var ast;
+      beforeEach(() => {
+        ast = parse([
+          'async /* flag enables async completion',
+          '         of the callback */function foo() {',
+          '}'
+        ]);
+      });
+
+      it('finds Identifier ExpressionStatement', () => {
+        assertFindsIdentifierExpressionStatement(ast);
+      });
+
+      it('does not mark FunctionDeclaration as async', () => {
+        node = find('FunctionDeclaration', ast);
+        assert(!node.async, 'Expected node.async to be false');
+      });
+    });
   });
 
   describe ('function expression', () => {
     var node, code;
 
-    beforeEach(() => {
-      code = [
-        'foo = async function () {',
-        '  x = await bar()',
-        '}'
-      ];
-      node = find(
-        'FunctionExpression',
-        parse(code)
+    describe('-', () => {
+      beforeEach(() => {
+        code = [
+          'foo = async function () {',
+          '  x = await bar()',
+          '}'
+        ];
+        node = find(
+          'FunctionExpression',
+          parse(code)
+        );
+      });
+
+      it('marks the node as async', () =>
+        assert(node.async)
+      );
+
+      it('finds correct start position', () =>
+        assert.strictEqual(node.start, 6)
+      );
+
+      it('finds correct end position', () =>
+        assert.strictEqual(node.end, code.join('\n').length)
+      );
+
+      it('finds correct start line/column', () =>
+        assert.deepEqual(node.loc.start, {
+          line: 1,
+          column: 6
+        })
+      );
+
+      it('finds correct end line/column', () =>
+        assert.deepEqual(node.loc.end, {
+          line: 3,
+          column: 1
+        })
       );
     });
 
-    it('marks the node as async', () =>
-      assert(node.async)
-    );
+    var assertFindsIdentifierAssignmentExpressionRHS = (ast) => {
+      node = find('AssignmentExpression', ast);
+      assert.strictEqual(node.right.type, 'Identifier');
+      assert.strictEqual(node.right.name, 'async');
+      assert.deepEqual(node.right.loc, {
+        start: {
+          line: 1,
+          column: 6
+        },
+        end: {
+          line: 1,
+          column: 11
+        }
+      });
+    };
 
-    it('finds correct start position', () =>
-      assert.strictEqual(node.start, 6)
-    );
+    describe('linefeed after async (simple)', () => {
+      var ast;
+      beforeEach(() => {
+        ast = parse([
+          'foo = async \t\t  ',
+          ', function() {',
+          '}'
+        ]);
+      });
 
-    it('finds correct end position', () =>
-      assert.strictEqual(node.end, code.join('\n').length)
-    );
+      it('finds Identifier ExpressionStatement', () => {
+        assertFindsIdentifierAssignmentExpressionRHS(ast);
+      });
 
-    it('finds correct start line/column', () =>
-      assert.deepEqual(node.loc.start, {
-        line: 1,
-        column: 6
-      })
-    );
+      it('does not mark FunctionExpression as async', () => {
+        node = find('FunctionExpression', ast);
+        assert(!node.async, 'Expected node.async to be false');
+      });
+    });
 
-    it('finds correct end line/column', () =>
-      assert.deepEqual(node.loc.end, {
-        line: 3,
-        column: 1
-      })
-    );
+    describe('linefeed after async (single line comment)', () => {
+      var ast;
+      beforeEach(() => {
+        ast = parse([
+          'foo = async // flag enables async completion',
+          ', function() {',
+          '}'
+        ]);
+      });
+
+      it('finds Identifier ExpressionStatement', () => {
+        assertFindsIdentifierAssignmentExpressionRHS(ast);
+      });
+
+      it('does not mark FunctionExpression as async', () => {
+        node = find('FunctionExpression', ast);
+        assert(!node.async, 'Expected node.async to be false');
+      });
+    });
+
+    describe('linefeed after async (multiline comment)', () => {
+      var ast;
+      beforeEach(() => {
+        ast = parse([
+          'foo = async /* flag enables async completion',
+          '         of the callback */, function() {',
+          '}'
+        ]);
+      });
+
+      it('finds Identifier ExpressionStatement', () => {
+        assertFindsIdentifierAssignmentExpressionRHS(ast);
+      });
+
+      it('does not mark FunctionExpression as async', () => {
+        node = find('FunctionExpression', ast);
+        assert(!node.async, 'Expected node.async to be false');
+      });
+    });
   });
 
   describe ('enhanced object literal', () => {
     var node, code;
 
-    beforeEach(() => {
-      code = [
-        'var x = {',
-        '  async foo() {}',
-        '};'
-      ];
-      node = find(
-        // TODO: Is it really supposed to mark the Property async? Why not the FunctionExpression?
-        'Property',
-        parse(code)
+    describe('-', () => {
+      beforeEach(() => {
+        code = [
+          'var x = {',
+          '  async foo() {}',
+          '};'
+        ];
+        node = find(
+          // TODO: Is it really supposed to mark the Property async? Why not the FunctionExpression?
+          'Property',
+          parse(code)
+        );
+      });
+
+      it('marks the node value as async', () =>
+          assert(node.value.async)
+      );
+
+      it('does not mark the node as async', () =>
+          assert(!node.async)
+      );
+
+      it('finds correct start position', () =>
+          assert.strictEqual(node.start, 12)
+      );
+
+      it('finds correct end position', () =>
+          assert.strictEqual(node.end, code[0].length + code[1].length + 1) // + 1 is due to newline char
+      );
+
+      it('finds correct start line/column', () =>
+          assert.deepEqual(node.loc.start, {
+            line: 2,
+            column: 2
+          })
+      );
+
+      it('finds correct end line/column', () =>
+          assert.deepEqual(node.loc.end, {
+            line: 2,
+            column: 16
+          })
       );
     });
 
-    it('marks the node value as async', () =>
-        assert(node.value.async)
-    );
+    describe('linefeed after async (simple)', () => {
+      it('fails to parse', () => {
+        assert.throws(() => parse([
+          'var x = {',
+          '  async \t\t  ',
+          '  foo() {}',
+          '};'      
+        ]));
+      });
+    });
 
-    it('does not mark the node as async', () =>
-        assert(!node.async)
-    );
+    describe('linefeed after async (single line comment)', () => {
+      it('fails to parse', () => {
+        assert.throws(() => parse([
+          'var x = {',
+          '  async // flag enables async completion',
+          '  foo() {}',
+          '};'
+        ]));
+      });
+    });
 
-    it('finds correct start position', () =>
-        assert.strictEqual(node.start, 12)
-    );
-
-    it('finds correct end position', () =>
-        assert.strictEqual(node.end, code[0].length + code[1].length + 1) // + 1 is due to newline char
-    );
-
-    it('finds correct start line/column', () =>
-        assert.deepEqual(node.loc.start, {
-          line: 2,
-          column: 2
-        })
-    );
-
-    it('finds correct end line/column', () =>
-        assert.deepEqual(node.loc.end, {
-          line: 2,
-          column: 16
-        })
-    );
+    describe('linefeed after async (multiline comment)', () => {
+      it('finds Identifier ExpressionStatement', () => {
+        assert.throws(() => parse([
+          'var x = {',
+          '  async /* flag enables async completion',
+          '         of the callback */ foo() {}',
+          '};'
+        ]));
+      });
+    });
   });
 
   describe ('ArrowFunctionExpression', () => {
     var node, code;
 
-    beforeEach(() => {
-      code = 'var x = async () => {}';
-      node = find(
-        'ArrowFunctionExpression',
-        parse(code)
+    describe('-', () => {
+      beforeEach(() => {
+        code = 'var x = async () => {}';
+        node = find(
+          'ArrowFunctionExpression',
+          parse(code)
+        );
+      });
+
+      it('marks the node as async', () =>
+          assert(node.async)
+      );
+
+      it('finds correct start position', () =>
+          assert.strictEqual(node.start, 8)
+      );
+
+      it('finds correct end position', () =>
+          assert.strictEqual(node.end, code.length)
+      );
+
+      it('finds correct start line/column', () =>
+          assert.deepEqual(node.loc.start, {
+            line: 1,
+            column: 8
+          })
+      );
+
+      it('finds correct end line/column', () =>
+          assert.deepEqual(node.loc.end, {
+            line: 1,
+            column: code.length
+          })
       );
     });
 
-    it('marks the node as async', () =>
-        assert(node.async)
-    );
+    describe('linefeed after async (simple)', () => {
+      var ast;
+      beforeEach(() => {
+        ast = parse([
+          'var x = async \t\t  ',
+          '()'
+        ]);
+      });
 
-    it('finds correct start position', () =>
-        assert.strictEqual(node.start, 8)
-    );
+      it('fails to parse if linefeed preceeds arrow arguments', () => {
+        assert.throws(() => parse([
+          'var x = async \t\t  ',
+          '() => {}'
+        ]));
+      });
 
-    it('finds correct end position', () =>
-        assert.strictEqual(node.end, code.length)
-    );
+      it('finds CallExpression with "async" Identifier callee', () => {
+        node = find('CallExpression', ast);
+        assert.strictEqual(node.callee.type, 'Identifier');
+        assert.strictEqual(node.callee.name, 'async');
+        assert.deepEqual(node.callee.loc, {
+          start: {
+            line: 1,
+            column: 8
+          },
+          end: {
+            line: 1,
+            column: 13
+          }
+        });
+      });
+    });
 
-    it('finds correct start line/column', () =>
-        assert.deepEqual(node.loc.start, {
-          line: 1,
-          column: 8
-        })
-    );
+    describe('linefeed after async (single line comment)', () => {
+      var ast;
+      beforeEach(() => {
+        ast = parse([
+          'var x = async // flag enables async completion',
+          '()'
+        ]);
+      });
 
-    it('finds correct end line/column', () =>
-        assert.deepEqual(node.loc.end, {
-          line: 1,
-          column: code.length
-        })
-    );
+      it('fails to parse if linefeed preceeds arrow arguments', () => {
+        assert.throws(() => parse([
+          'var x = async \t\t  ',
+          '() => {}'
+        ]));
+      });
+
+      it('finds CallExpression with "async" Identifier callee', () => {
+        node = find('CallExpression', ast);
+        assert.strictEqual(node.callee.type, 'Identifier');
+        assert.strictEqual(node.callee.name, 'async');
+        assert.deepEqual(node.callee.loc, {
+          start: {
+            line: 1,
+            column: 8
+          },
+          end: {
+            line: 1,
+            column: 13
+          }
+        });
+      });
+    });
+
+    describe('linefeed after async (multiline comment)', () => {
+      var ast;
+      beforeEach(() => {
+        ast = parse([
+          'var x = async /* flag enables async completion',
+          '         of the callback */()'
+        ]);
+      });
+
+      it('fails to parse if linefeed preceeds arrow arguments', () => {
+        assert.throws(() => parse([
+          'var x = async /* flag enables async completion',
+          '         of the callback */() => {}'
+        ]));
+      });
+
+      it('finds CallExpression with "async" Identifier callee', () => {
+        node = find('CallExpression', ast);
+        assert.strictEqual(node.callee.type, 'Identifier');
+        assert.strictEqual(node.callee.name, 'async');
+        assert.deepEqual(node.callee.loc, {
+          start: {
+            line: 1,
+            column: 8
+          },
+          end: {
+            line: 1,
+            column: 13
+          }
+        });
+      });
+    });
   });
 });
 
