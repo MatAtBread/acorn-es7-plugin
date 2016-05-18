@@ -3,6 +3,11 @@ var asyncExit = /^async[\t ]+(return|throw)/ ;
 var asyncFunction = /^async[\t ]+function/ ;
 var atomOrPropertyOrLabel = /^\s*[):;]/ ;
 var asyncAtEndOfLine = /^async[\t ]*\n/ ;
+var removeComments = /\/\*(\*(?!\/)|[^*])*\*\/|\/\/.*/g ;
+
+function test(regex,st) {
+	return regex.test(st.input.slice(st.start).replace(removeComments," "));
+}
 
 /* Return the object holding the parser's 'State'. This is different between acorn ('this')
  * and babylon ('this.state') */
@@ -54,20 +59,23 @@ function asyncAwaitPlugin (parser,options){
 
 	parser.extend("shouldParseExportStatement",function(base){
 	    return function(){
-	        if (this.type.label==='name' && this.value==='async' && asyncFunction.test(this.input.substr(this.start))) {
+	        if (this.type.label==='name' && this.value==='async' && test(asyncFunction,state(this))) {
 	            return true ;
 	        }
 	        return base.apply(this,arguments) ;
 	    }
 	}) ;
-	
+
 	parser.extend("parseStatement",function(base){
 		return function (declaration, topLevel) {
 			var st = state(this) ;
 			var start = st.start;
 			var startLoc = st.startLoc;
 			if (st.type.label==='name') {
-				if (asyncFunction.test(st.input.slice(st.start))) {
+				if (test(asyncAtEndOfLine,st)) {
+					return this.parseExpressionStatement(this.startNode(),this.parseIdent(true)) ;
+				}
+				else if (test(asyncFunction,st)) {
 					var wasAsync = st.inAsyncFunction ;
 					try {
 						st.inAsyncFunction = true ;
@@ -80,7 +88,7 @@ function asyncAwaitPlugin (parser,options){
 					} finally {
 						st.inAsyncFunction = wasAsync ;
 					}
-				} else if ((typeof options==="object" && options.asyncExits) && asyncExit.test(st.input.slice(st.start))) {
+				} else if ((typeof options==="object" && options.asyncExits) && test(asyncExit,st)) {
 					// NON-STANDARD EXTENSION iff. options.asyncExits is set, the
 					// extensions 'async return <expr>?' and 'async throw <expr>?'
 					// are enabled. In each case they are the standard ESTree nodes
@@ -117,7 +125,10 @@ function asyncAwaitPlugin (parser,options){
 			var startLoc = st.startLoc;
 			var rhs,r = base.apply(this,arguments);
 			if (r.type==='Identifier') {
-				if (r.name==='async' && !asyncAtEndOfLine.test(st.input.slice(start))) {
+				if (r.name==='async') {
+					if (test(asyncAtEndOfLine, st)) {
+						return r ;
+					} else {
 					// Is this really an async function?
 					var isAsync = st.inAsyncFunction ;
 					try {
@@ -164,6 +175,7 @@ function asyncAwaitPlugin (parser,options){
 						st.inAsyncFunction = isAsync ;
 					}
 				}
+			}
 				else if (r.name==='await') {
 					var n = this.startNodeAt(r.start, r.loc && r.loc.start);
 					if (st.inAsyncFunction) {
