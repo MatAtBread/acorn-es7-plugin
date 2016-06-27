@@ -104,6 +104,11 @@ When using the plugin, you can supply an object in place of the 'true' flag with
 
 Changelog
 =========
+
+27-Jun-16: v1.0.15
+
+- Fix issue parsing async methods in classes and object literals which (incorrectly) required the `awaitAnywhere` option ([see https://github.com/MatAtBread/acorn-es7-plugin/issues/12](https://github.com/MatAtBread/acorn-es7-plugin/issues/12))
+
 03-May-16: v1.0.14
 
 - Correctly parse async statements containing comments.
