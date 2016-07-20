@@ -105,6 +105,10 @@ When using the plugin, you can supply an object in place of the 'true' flag with
 Changelog
 =========
 
+20-Jul-16: v1.0.16
+
+- Correctly set non-standard "range" property on async nodes, as used by Webpack
+
 27-Jun-16: v1.0.15
 
 - Fix issue parsing async methods in classes and object literals which (incorrectly) required the `awaitAnywhere` option ([see https://github.com/MatAtBread/acorn-es7-plugin/issues/12](https://github.com/MatAtBread/acorn-es7-plugin/issues/12))

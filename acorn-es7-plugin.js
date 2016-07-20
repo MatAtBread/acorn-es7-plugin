@@ -92,6 +92,7 @@ function asyncAwaitPlugin (parser,options){
                         r.async = true ;
                         r.start = start;
                         r.loc && (r.loc.start = startLoc);
+                        r.range && (r.range[0] = start);
                         return r ;
                     } finally {
                         st.inAsyncFunction = wasAsync ;
@@ -106,7 +107,8 @@ function asyncAwaitPlugin (parser,options){
                     r.async = true ;
                     r.start = start;
                     r.loc && (r.loc.start = startLoc);
-                    return r ;
+                    r.range && (r.range[0] = start);
+                   return r ;
                 }
             }
             return base.apply(this,arguments);
@@ -167,6 +169,7 @@ function asyncAwaitPlugin (parser,options){
                             rhs.async = true ;
                             rhs.start = start;
                             rhs.loc && (rhs.loc.start = startLoc);
+                            rhs.range && (rhs.range[0] = start);
                             st.pos = rhs.end;
                             this.next();
                             es7check(rhs) ;
