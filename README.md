@@ -105,7 +105,7 @@ When using the plugin, you can supply an object in place of the 'true' flag with
 Changelog
 =========
 
-20-Jul-16: v1.0.16
+20-Jul-16: v1.0.17
 
 - Correctly set non-standard "range" property on async nodes, as used by Webpack
 
