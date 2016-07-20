@@ -171,6 +171,8 @@ function asyncAwaitPlugin (parser,options){
                             rhs.loc && (rhs.loc.start = startLoc);
                             rhs.range && (rhs.range[0] = start);
                             st.pos = rhs.end;
+                            this.end = rhs.end ;
+                            this.endLoc = rhs.endLoc ;
                             this.next();
                             es7check(rhs) ;
                             return rhs ;
@@ -210,6 +212,8 @@ function asyncAwaitPlugin (parser,options){
                                 n.argument = rhs ;
                                 n = this.finishNodeAt(n,'AwaitExpression', rhs.end, rhs.loc && rhs.loc.end) ;
                                 st.pos = rhs.end;
+                                this.end = rhs.end ;
+                                this.endLoc = rhs.endLoc ;
                                 this.next();
                                 es7check(n) ;
                                 return n ;
