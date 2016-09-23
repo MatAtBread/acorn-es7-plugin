@@ -1,42 +1,4 @@
 {
-  "_args": [
-    [
-      {
-        "raw": "../acorn-es7-plugin",
-        "scope": null,
-        "escapedName": null,
-        "name": null,
-        "rawSpec": "../acorn-es7-plugin",
-        "spec": "/Users/matthewwoolf/git/acorn-es7-plugin",
-        "type": "directory"
-      },
-      "/Users/matthewwoolf/git/nodent"
-    ]
-  ],
-  "_from": "../acorn-es7-plugin",
-  "_id": "acorn-es7-plugin@1.1.0",
-  "_inCache": true,
-  "_installable": true,
-  "_location": "/acorn-es7-plugin",
-  "_phantomChildren": {},
-  "_requested": {
-    "raw": "../acorn-es7-plugin",
-    "scope": null,
-    "escapedName": null,
-    "name": null,
-    "rawSpec": "../acorn-es7-plugin",
-    "spec": "/Users/matthewwoolf/git/acorn-es7-plugin",
-    "type": "directory"
-  },
-  "_requiredBy": [
-    "#USER",
-    "/"
-  ],
-  "_resolved": "file:../acorn-es7-plugin",
-  "_shasum": "ce63982f5862d153946d3475fff60fa69974d00b",
-  "_shrinkwrap": null,
-  "_spec": "../acorn-es7-plugin",
-  "_where": "/Users/matthewwoolf/git/nodent",
   "author": {
     "name": "matatbread"
   },
