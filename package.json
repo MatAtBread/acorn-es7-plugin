@@ -1,15 +1,53 @@
 {
-  "name": "acorn-es7-plugin",
-  "version": "1.0.17",
+  "_args": [
+    [
+      {
+        "raw": "../acorn-es7-plugin",
+        "scope": null,
+        "escapedName": null,
+        "name": null,
+        "rawSpec": "../acorn-es7-plugin",
+        "spec": "/Users/matthewwoolf/git/acorn-es7-plugin",
+        "type": "directory"
+      },
+      "/Users/matthewwoolf/git/nodent"
+    ]
+  ],
+  "_from": "../acorn-es7-plugin",
+  "_id": "acorn-es7-plugin@1.1.0",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/acorn-es7-plugin",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "../acorn-es7-plugin",
+    "scope": null,
+    "escapedName": null,
+    "name": null,
+    "rawSpec": "../acorn-es7-plugin",
+    "spec": "/Users/matthewwoolf/git/acorn-es7-plugin",
+    "type": "directory"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "file:../acorn-es7-plugin",
+  "_shasum": "ce63982f5862d153946d3475fff60fa69974d00b",
+  "_shrinkwrap": null,
+  "_spec": "../acorn-es7-plugin",
+  "_where": "/Users/matthewwoolf/git/nodent",
+  "author": {
+    "name": "matatbread"
+  },
+  "bugs": {
+    "url": "https://github.com/MatAtBread/acorn-es7-plugin/issues"
+  },
+  "dependencies": {},
   "description": "A plugin for the Acorn parser that understands the ES7 keywords async and await",
-  "main": "acorn-es7-plugin.js",
-  "scripts": {
-    "test": "cd test ; npm i ; npm test"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MatAtBread/acorn-es7-plugin.git"
-  },
+  "devDependencies": {},
+  "gitHead": "c6ed3dd0e465e9d8e63ea54163dcca31d0196b4d",
+  "homepage": "https://github.com/MatAtBread/acorn-es7-plugin#readme",
   "keywords": [
     "acorn",
     "parser",
@@ -17,10 +55,18 @@
     "async",
     "await"
   ],
-  "author": "matatbread",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/MatAtBread/acorn-es7-plugin/issues"
+  "main": "acorn-es7-plugin.js",
+  "name": "acorn-es7-plugin",
+  "optionalDependencies": {},
+  "readme": "[![NPM](https://nodei.co/npm/acorn-es7-plugin.png?downloads=true&downloadRank=true)](https://nodei.co/npm/acorn-es7-plugin/)\n\nacorn-es7-plugin\n======\n\nacorn-es7-plugin is a plugin for the [Acorn](https://github.com/marijnh/acorn) parser that generates ESTrees following the ['experimental' specification](https://github.com/estree/estree/blob/master/experimental/async-functions.md) for asynchronous functions.\n\n\tnpm install --save acorn-es7-plugin\n\nUsage\n=====\n\nAdding the plugin\n\n\t// Require acorn as usual\n\tvar acorn = require(\"acorn\");\n\t// Add the es7-plugin\n\trequire('./acorn-es7-plugin')(acorn) ;\n\nUsing the plugin\n\n\tvar code = \"async function x(){ if (x) return await(x-1) ; return 0 ; }\\n\";\n\tvar ast = acorn.parse(code,{\n\t\t// Specify use of the plugin\n\t\tplugins:{asyncawait:true},\n\t\t// Specify the ecmaVersion\n\t\tecmaVersion:7\n\t}) ;\n\t// Show the AST\n\tconsole.log(JSON.stringify(ast,null,2)) ;\n\nOutput:\n\n\t{\n\t\t\"type\": \"Program\",\n\t\t\"body\": [\n\t\t{\n\t\t  \"type\": \"FunctionDeclaration\",\n\t\t  \"id\": {\n\t\t    \"type\": \"Identifier\",\n\t\t    \"name\": \"x\"\n\t\t  },\n\t\t  \"generator\": false,\n\t\t  \"expression\": false,\n\t\t  \"params\": [],\n\t\t  \"body\": {\n\t\t    \"type\": \"BlockStatement\",\n\t\t    \"body\": [\n\t\t      {\n\t\t        \"type\": \"IfStatement\",\n\t\t        \"test\": {\n\t\t          \"type\": \"Identifier\",\n\t\t          \"name\": \"x\"\n\t\t        },\n\t\t        \"consequent\": {\n\t\t          \"type\": \"ReturnStatement\",\n\t\t          \"argument\": {\n\t\t            \"type\": \"AwaitExpression\",\n\t\t            \"operator\": \"await\",\n\t\t            \"argument\": {\n\t\t              \"type\": \"BinaryExpression\",\n\t\t              \"left\": {\n\t\t                \"type\": \"Identifier\",\n\t\t                \"name\": \"x\"\n\t\t              },\n\t\t              \"operator\": \"-\",\n\t\t              \"right\": {\n\t\t                \"type\": \"Literal\",\n\t\t                \"value\": 1,\n\t\t                \"raw\": \"1\"\n\t\t              }\n\t\t            }\n\t\t          }\n\t\t        },\n\t\t        \"alternate\": null\n\t\t      },\n\t\t      {\n\t\t        \"type\": \"ReturnStatement\",\n\t\t        \"argument\": {\n\t\t          \"type\": \"Literal\",\n\t\t          \"value\": 0,\n\t\t          \"raw\": \"0\"\n\t\t        }\n\t\t      }\n\t\t    ]\n\t\t  },\n\t\t  \"async\": true\n\t\t}\n\t\t],\n\t\t\"sourceType\": \"script\"\n\t}\n\nOptions & Compliance\n====================\nThe parser attempts to enforce strict contextualisation of `async` and `await`. Specifically, `async` is only a keyword if it precedes a function declaration, function expression or arrow function. `await` is only a keyword inside an `async` function. Outside of these contexts, both tokens are treated as identifiers (as they were in ES6 and earlier).\n\nWhen using the plugin, you can supply an object in place of the 'true' flag with the following options.\n\n| flag | meaning |\n|------|---------|\n| awaitAnywhere | If `await` is used outside of an async function and could not be an identifier, generate an AwaitExpression node. This typically means you can use `await` anywhere _except_ when its argument would require parentheses, as this parses to a call to 'await(....)'. Should not be used with inAsyncFunction option |\n| inAsyncFunction | Parse the code as if it is the body of an `async function`. This means `await` cannot be an identifier and is always an AwaitExpression, even if the argument is parenthesized. Should not be used with the awaitAnywhere option |\n| asyncExits | Allow the additional sequences `async return <optional-expression>` and `async throw <expression>`. These sequences are used with [nodent](https://github.com/MatAtBread/nodent). In each case, as with async functions, a standard ReturnStatement (or ThrowStatement) node is generated, with an additional member 'async' set to true.\n\nChangelog\n=========\n\n20-Jul-16: v1.0.17\n\n- Correctly set non-standard \"range\" property on async nodes, as used by Webpack\n\n27-Jun-16: v1.0.15\n\n- Fix issue parsing async methods in classes and object literals which (incorrectly) required the `awaitAnywhere` option ([see https://github.com/MatAtBread/acorn-es7-plugin/issues/12](https://github.com/MatAtBread/acorn-es7-plugin/issues/12))\n\n03-May-16: v1.0.14\n\n- Correctly parse async statements containing comments.\n- Implement the option inAsyncFunction\n\n03-May-16: v1.0.13\n\n- Correctly parse the statement `export async function name(){...}` as _async function name(){...}_ is a valid named declaration.\n\n26-Feb-16: v1.0.12\n\n- Updated to return the original acorn object on installation. See https://github.com/MatAtBread/acorn-es7-plugin/pull/4\n\n19-Dec-15: v1.0.11\n\n- Generate error if 'await' is used as an identifier within an async function.\n\n10-Dec-15: v1.0.10\n\n- Update the plugin code to remove 'async' and 'await' from the super-strict keyword tests introduced in acorn v2.6.x that generate parse errors before the plugin gets a chance to manage them.\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MatAtBread/acorn-es7-plugin.git"
   },
-  "homepage": "https://github.com/MatAtBread/acorn-es7-plugin#readme"
+  "scripts": {
+    "test": "cd test ; npm i ; npm test"
+  },
+  "version": "1.1.0"
 }
