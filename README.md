@@ -107,9 +107,13 @@ The parser also accepts async getters in object literals and classes, which is c
 Changelog
 =========
 
-24-Sep-16: v1.1.0
+25-Sep-16: v1.1.0
 
 - Update to work with acorn v4 if present. Note that `async` and `await` are fully parsed by acorn v4. The only use case for the plugin with acorn v4 is with the flags above which are enable specific parsing modes. 
+
+24-Sep-16: v1.0.18
+
+- Correctly parse `async(()=>0)` as a call to the Identifer 'async', not a failed attempt to define an async arrow.
 
 20-Jul-16: v1.0.17
 

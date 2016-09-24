@@ -3,13 +3,13 @@
 var acorn = require('acorn');
 var colors = require('colors');
 require('../')(acorn);
-function parse(code, pluginOptions) {
+function parse(code, pluginOptions, scriptType) {
     if (Array.isArray(code)) {
         code = code.join('\n');
     }
     return acorn.parse(code, {
-        sourceType: 'module',
-        ecmaVersion: 7,
+        sourceType: scriptType,
+        ecmaVersion: 8,
         locations: true,
         ranges: true,
         plugins: {
@@ -67,6 +67,12 @@ var tests = [{
     code: "var a = async()=>0",
     pass: function (ast) {
         return ast.body[0].declarations[0].init.async;
+    }
+},{
+    desc: "Parenthesized async arrow is a call",
+    code: "var a = async(()=>0)",
+    pass: function (ast) {
+        return ast.body[0].declarations[0].init.type==='CallExpression';
     }
 },{
     desc: "Async set method fails",
@@ -176,23 +182,31 @@ var results = {
     true: 0,
     false: 0
 };
+
 tests.forEach(function (test, idx) {
-    var code = test.code.replace(/\n/g, ' <linefeed> ');
-    var desc = test.desc.replace('{code}', code.yellow);
-    var pass = function () {
-        var p = test.pass.apply(this, arguments);
-        results[p] += 1;
-        return p;
-    };
-    try {
-        console.log(idx + testNumber + ")\t", desc, out[pass(parse(test.code, test.options))]);
-    } catch (ex) {
-        console.log(idx + testNumber + ")\t", desc, ex.message.cyan, out[pass(ex.message)]);
-    }
-});
+    ['script','module'].forEach(function(scriptType){
+        var code = test.code.replace(/\n/g, ' <linefeed> ');
+        var desc = test.desc.replace('{code}', code.yellow);
+        var pass = function () {
+            var p = test.pass.apply(this, arguments);
+            results[p] += 1;
+            return p;
+        };
+        var prefix = idx + testNumber + " (" + scriptType + ", acorn v" + acorn.version+")\t" ;
+        try {
+            console.log(prefix, desc, out[pass(parse(test.code, test.options, scriptType))]);
+        } catch (ex) {
+            try {
+                console.log(prefix, desc, ex.message.cyan, out[pass(ex.message)]);
+            } catch (ex) {
+                console.log(prefix, desc, ex.message.magenta, out[false]);
+            }
+        }
+    });
+}) ;
 console.log('');
 if (results.true) 
-    console.log((results.true + " of " + tests.length + " tests passed").green);
+    console.log((results.true + " of " + tests.length*2 + " tests passed").green);
 if (results.false) 
-    console.log((results.false + " of " + tests.length + " tests failed").red);
+    console.log((results.false + " of " + tests.length*2 + " tests failed").red);
 

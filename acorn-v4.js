@@ -41,6 +41,7 @@ function subParse(parser, pos, extensions) {
         if (k in src)
             dest[k] = src[k] ;
     }) ;
+    p.options.preserveParens = true ;
     p.nextToken();
     return p;
 }
