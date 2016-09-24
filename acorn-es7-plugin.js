@@ -168,6 +168,9 @@ function asyncAwaitPlugin (parser,options){
                         if (rhs.type==='SequenceExpression')
                             rhs = rhs.expressions[0] ;
                         if (rhs.type==='FunctionExpression' || rhs.type==='FunctionDeclaration' || rhs.type==='ArrowFunctionExpression') {
+                            // Because we don't know if the top level parser supprts preserveParens, we have to re-parse
+                            // without it set
+                            rhs = subParse(this,st.start,parseHooks).parseExpression() ;
                             rhs.async = true ;
                             rhs.start = start;
                             rhs.loc && (rhs.loc.start = startLoc);
