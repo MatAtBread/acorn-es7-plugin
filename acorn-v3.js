@@ -221,7 +221,7 @@ function asyncAwaitPlugin (parser,options){
                         }
                     }
 
-                    if (this.options.sourceType === 'module')
+                    if (!options.awaitAnywhere && this.options.sourceType === 'module')
                         return this.raise(r.start,"'await' is reserved within modules") ;
                 }
             }

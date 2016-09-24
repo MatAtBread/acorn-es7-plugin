@@ -49,12 +49,12 @@ function subParse(parser, pos, extensions) {
 function asyncAwaitPlugin (parser,options){
     if (!options || typeof options !== "object")
         options = {} ;
-    
-    parser.extend("initialContext",function(base){
+
+    parser.extend("parse",function(base){
         return function(){
-            this.inAsync = options.inAsync ;
-            if (options.awaitAnywhere && options.inAsync)
-                parser.raise(node.start,"The options awaitAnywhere and inAsync are mutually exclusive") ;
+            this.inAsync = options.inAsyncFunction ;
+            if (options.awaitAnywhere && options.inAsyncFunction)
+                parser.raise(node.start,"The options awaitAnywhere and inAsyncFunction are mutually exclusive") ;
 
             return base.apply(this,arguments);
         }
@@ -86,13 +86,23 @@ function asyncAwaitPlugin (parser,options){
         }
     }) ;
 
+    parser.extend("parseIdent",function(base){
+        return function(liberal) {
+            if (this.options.sourceType==='module' && this.options.ecmaVersion >= 8 && options.awaitAnywhere)
+                return base.call(this,true) ; // Force liberal mode if awaitAnywhere is set
+            return base.apply(this,arguments) ;
+        }
+    }) ;
+
     parser.extend("parseExprAtom",function(base){
         var NotAsync = {};
         return function(refShorthandDefaultPos){
             var st = state(this) ;
             var start = st.start ;
             var startLoc = st.startLoc;
+
             var rhs,r = base.apply(this,arguments);
+
             if (r.type==='Identifier') {
                 if (r.name==='await' && !st.inAsync) {
                     if (options.awaitAnywhere) {
@@ -161,7 +171,7 @@ function asyncAwaitPlugin (parser,options){
             var wasAsync = st.inAsync ;
             if (st.__isAsyncProp) {
                 node.async = true ;
-                st.inAsync = true ; //st.inAsync || node.async ;
+                st.inAsync = true ;
                 delete st.__isAsyncProp ;
             }
             var r = base.apply(this,arguments) ;

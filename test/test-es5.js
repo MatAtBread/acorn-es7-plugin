@@ -23,7 +23,11 @@ function isIdentThenFnDecl(ast) {
 }
 
 function isAsyncFnDecl(ast) {
-    return ast.body[0].async === true && ast.body[0].type == "FunctionDeclaration";
+    return ast.body[0].async === true && ast.body[0].type === "FunctionDeclaration";
+}
+
+function isAsyncFnExpr(ast) {
+    return ast.body[0].expression.async === true && ast.body[0].expression.type === "ArrowFunctionExpression";
 }
 
 function isExprType(type) {
@@ -74,13 +78,13 @@ var tests = [
     desc: "Await declaration fails in async function",
     code: "async function x() { var await; }",
     pass: function (ex, scriptType) {
-      return ex.indexOf("(1:25)")>=0// === "'await' is reserved within async functions (1:25)":ex==="The keyword 'await' is reserved (1:25)";
+      return ex.indexOf("(1:25)")>=0
     }
 },{
     desc: "Await function declaration fails in async function",
     code: "async function x() { function await() {} }",
     pass: function (ex, scriptType) {
-      return ex.indexOf("(1:30)")>=0//scriptType === 'script'?ex === "'await' is reserved within async functions (1:25)":ex==="The keyword 'await' is reserved (1:30)";
+      return ex.indexOf("(1:30)")>=0
     }
 },{
     desc: "Await reference fails in async function",
@@ -88,6 +92,14 @@ var tests = [
     pass: function (ex) {
         return !!ex.match(/\(1:3[05]\)/);
     }
+},{
+    desc: "{code} is an async FunctionExpression",
+    code: "async ()=>0",
+    pass: isAsyncFnExpr
+},{
+    desc: "{code} is a CallExpression",
+    code: "async(()=>0)",
+    pass: isExprType('CallExpression')
 },{
     desc: "{code} is an async FunctionDeclaration",
     code: "async /* a */ function x(){}",
@@ -112,69 +124,66 @@ var tests = [
     desc: "{code} is a reference to 'async' and a sync FunctionDeclaration",
     code: "async /*\n*/\nfunction x(){}",
     pass: isIdentThenFnDecl
-},
-/* Extended syntax behaviour for Nodent */
-{
-    desc: "Async get method",
-    code: "var a = {async get x(){}}",
-    pass: function (ast) {
-        return ast.body[0].declarations[0].init.properties[0].value.async;
-    }
 },{
-    desc: "Async set method fails",
-    code: "var a = {async set x(){}}",
-    pass: function (ex) {
-        return ex === "'set <member>(value)' cannot be be async (1:15)";
-    }
-},{
-    desc: "Async constructor fails",
-    code: "var a = {async constructor(){}}",
-    pass: function (ex) {
-        return ex === "'constructor()' cannot be be async (1:15)";
-    }
-},{
-    /* Valid combinations of await options; none, just inAsyncFunction, or just awaitAnywhere */
-    desc: "{code} is an AwaitExpression when inAsyncFunction option is true",
-    code: "await(x)",
-    options: {
-        inAsyncFunction: true
-    },
-    pass: isExprType('AwaitExpression')
-},{
-    desc: "{code} is an AwaitExpression when inAsyncFunction option is true",
-    code: "await x",
-    options: {
-        inAsyncFunction: true
-    },
-    pass: isExprType('AwaitExpression')
-},{
-    desc: "{code} is a CallExpression when awaitAnywhere option is true",
-    code: "await(x)",
-    options: {
-        awaitAnywhere: true
-    },
-    pass: function(ast,sourceType) {
-        return sourceType==='module'?ast==="'await' is reserved within modules (1:0)" :isExprType('CallExpression')(ast)
-    }
-},{
-    desc: "{code} is an AwaitExpression when awaitAnywhere option is true",
-    code: "await x",
-    options: {
-        awaitAnywhere: true
-    },
-    pass: isExprType('AwaitExpression')
-},{
-    desc: "{code} is a CallExpression when inAsyncFunction and awaitAnywhere option are false",
+    desc: "{code} is a CallExpression in scripts, and a SyntaxError in modules",
     code: "await(x)",
     pass: function(ast,sourceType) {
-        return sourceType==='module'?ast==="'await' is reserved within modules (1:0)" :isExprType('CallExpression')(ast)
+        return sourceType==='module'?!!ast.match(/\(1:0\)/) :isExprType('CallExpression')(ast)
     }
 },{
     desc: "{code} is a SyntaxError when inAsyncFunction and awaitAnywhere option are false",
     code: "await x",
     pass: function (ex, sourceType) {
-        return sourceType==='module' ? ex === "'await' is reserved within modules (1:0)" : ex === "Unexpected token (1:6)";
+        return sourceType==='module' ? !!ex.match(/\(1:0\)/) : ex === "Unexpected token (1:6)";
     }
+},
+/* Extended syntax behaviour for Nodent */
+{
+    desc: "Nodent:".grey+" Async get method",
+    code: "var a = {async get x(){}}",
+    pass: function (ast) {
+        return ast.body[0].declarations[0].init.properties[0].value.async;
+    }
+},{
+    desc: "Nodent:".grey+" Async set method fails",
+    code: "var a = {async set x(){}}",
+    pass: function (ex) {
+        return ex === "'set <member>(value)' cannot be be async (1:15)";
+    }
+},{
+    desc: "Nodent:".grey+" Async constructor fails",
+    code: "var a = {async constructor(){}}",
+    pass: function (ex) {
+        return ex === "'constructor()' cannot be be async (1:15)";
+    }
+},{
+    desc: "Nodent:".grey+" {code} is an AwaitExpression when inAsyncFunction option is true",
+    code: "await(x)",
+    options: {
+        inAsyncFunction: true
+    },
+    pass: isExprType('AwaitExpression')
+},{
+    desc: "Nodent:".grey+" {code} is an AwaitExpression when inAsyncFunction option is true",
+    code: "await x",
+    options: {
+        inAsyncFunction: true
+    },
+    pass: isExprType('AwaitExpression')
+},{
+    desc: "Nodent:".grey+" {code} is a CallExpression when awaitAnywhere option is true",
+    code: "await(x)",
+    options: {
+        awaitAnywhere: true
+    },
+    pass: isExprType('CallExpression')
+},{
+    desc: "Nodent:".grey+" {code} is an AwaitExpression when awaitAnywhere option is true",
+    code: "await x",
+    options: {
+        awaitAnywhere: true
+    },
+    pass: isExprType('AwaitExpression')
 }];
 var out = {
     true: "pass".green,
@@ -215,5 +224,9 @@ tests.forEach(function (test, idx) {
 console.log('');
 if (results.true)
     console.log((results.true + " of " + tests.length*2 + " tests passed").green);
-if (results.false)
+if (results.false) {
     console.log((results.false + " of " + tests.length*2 + " tests failed").red);
+    var exit = new Error("Test failed") ;
+    exit.stack = "" ;
+    throw exit ;
+}
