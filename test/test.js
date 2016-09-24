@@ -37,7 +37,7 @@ function find (type, ast, skip) {
 function extendOptions(pluginOptions, acornOptions) {
   return xtend({
     sourceType: 'module',
-    ecmaVersion: 7,
+    ecmaVersion: 8,
     locations: true,
     ranges: true,
     plugins: {asyncawait: pluginOptions || pluginOptions !== false}
