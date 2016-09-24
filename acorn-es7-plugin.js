@@ -26,7 +26,7 @@ function state(p) {
 
 /* Create a new parser derived from the specified parser, so that in the
  * event of an error we can back out and try again */
-function subParse(parser, pos, extensions) {
+function subParse(parser, pos, extensions, parens) {
     // NB: The Babylon constructor does NOT expect 'pos' as an argument, and so
     // the input needs truncation at the start position, however at present
     // this doesn't work nicely as all the node location/start/end values
@@ -43,7 +43,8 @@ function subParse(parser, pos, extensions) {
         if (k in src)
             dest[k] = src[k] ;
     }) ;
-    p.options.preserveParens = true ;
+    if (parens)
+        p.options.preserveParens = true ;
     p.nextToken();
     return p;
 }
@@ -58,9 +59,9 @@ function asyncAwaitPlugin (parser,options){
                     parser.raise(node.start,"async/await keywords only available when ecmaVersion>=7") ;
                 } ;
             }
-      this.reservedWords = new RegExp(this.reservedWords.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
-      this.reservedWordsStrict = new RegExp(this.reservedWordsStrict.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
-      this.reservedWordsStrictBind = new RegExp(this.reservedWordsStrictBind.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
+            this.reservedWords = new RegExp(this.reservedWords.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
+            this.reservedWordsStrict = new RegExp(this.reservedWordsStrict.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
+            this.reservedWordsStrictBind = new RegExp(this.reservedWordsStrictBind.toString().replace(/await|async/g,"").replace("|/","/").replace("/|","/").replace("||","|")) ;
             this.inAsyncFunction = options.inAsyncFunction ;
             if (options.awaitAnywhere && options.inAsyncFunction)
                 parser.raise(node.start,"The options awaitAnywhere and inAsyncFunction are mutually exclusive") ;
@@ -163,7 +164,7 @@ function asyncAwaitPlugin (parser,options){
                             }
                         } ;
 
-                        rhs = subParse(this,st.start,parseHooks).parseExpression() ;
+                        rhs = subParse(this,st.start,parseHooks,true).parseExpression() ;
                         if (rhs.type==='SequenceExpression')
                             rhs = rhs.expressions[0] ;
                         if (rhs.type==='FunctionExpression' || rhs.type==='FunctionDeclaration' || rhs.type==='ArrowFunctionExpression') {
@@ -177,6 +178,9 @@ function asyncAwaitPlugin (parser,options){
                             this.next();
                             es7check(rhs) ;
                             return rhs ;
+                        }
+                        if (rhs.type==='ParenthesizedExpression' && !this.options.preserveParens) {
+                          rhs = rhs.expression ;
                         }
                     } catch (ex) {
                         if (ex!==NotAsync)
@@ -283,7 +287,7 @@ function asyncAwaitPlugin (parser,options){
             return r ;
         }
     }) ;
-    
+
     parser.extend("parsePropertyValue",function(base){
         return function (prop, isPattern, isGenerator, startPos, startLoc, refDestructuringErrors) {
             var st, wasAsync ;

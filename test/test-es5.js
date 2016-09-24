@@ -26,6 +26,10 @@ function isAsyncFnDecl(ast) {
     return ast.body[0].async === true && ast.body[0].type == "FunctionDeclaration";
 }
 
+function isAsyncFnExpr(ast) {
+    return ast.body[0].expression.async === true && ast.body[0].expression.type === "ArrowFunctionExpression";
+}
+
 function isExprType(type) {
     return function (ast) {
         return ast.body[0].type === 'ExpressionStatement' && ast.body[0].expression.type === type;
@@ -67,12 +71,6 @@ var tests = [{
     code: "var a = async()=>0",
     pass: function (ast) {
         return ast.body[0].declarations[0].init.async;
-    }
-},{
-    desc: "Parenthesized async arrow is a call",
-    code: "var a = async(()=>0)",
-    pass: function (ast) {
-        return ast.body[0].declarations[0].init.type==='CallExpression';
     }
 },{
     desc: "Async set method fails",
@@ -167,7 +165,16 @@ var tests = [{
     pass: function (ex) {
         return ex === "Unexpected token (1:6)";
     }
+},{
+    desc: "{code} is an async FunctionExpression",
+    code: "async ()=>0",
+    pass: isAsyncFnExpr
+ },{
+    desc: "{code} is a CallExpression",
+    code: "async(()=>0)",
+    pass: isExprType('CallExpression')
 }];
+
 var out = {
     true: "pass".green,
     false: "fail".red
@@ -193,12 +200,15 @@ tests.forEach(function (test, idx) {
     try {
         console.log(idx + testNumber + ")\t", desc, out[pass(parse(test.code, test.options))]);
     } catch (ex) {
-        console.log(idx + testNumber + ")\t", desc, ex.message.cyan, out[pass(ex.message)]);
+        try {
+          console.log(idx + testNumber + ")\t", desc, ex.message.cyan, out[pass(ex.message)]);
+        } catch (ex) {
+          console.log(idx + testNumber + ")\t", desc, ex.message.magenta, out.false);
+        }
     }
 });
 console.log('');
-if (results.true) 
+if (results.true)
     console.log((results.true + " of " + tests.length + " tests passed").green);
-if (results.false) 
+if (results.false)
     console.log((results.false + " of " + tests.length + " tests failed").red);
-
