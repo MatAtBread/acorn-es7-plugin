@@ -105,6 +105,10 @@ When using the plugin, you can supply an object in place of the 'true' flag with
 Changelog
 =========
 
+24-Sep-16: v1.0.18
+
+- Correctly parse `async(()=>0)` as a call to the Identifer 'async', not a failed attempt to define an async arrow.
+
 20-Jul-16: v1.0.17
 
 - Correctly set non-standard "range" property on async nodes, as used by Webpack
