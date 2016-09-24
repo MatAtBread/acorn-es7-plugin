@@ -69,6 +69,12 @@ var tests = [{
         return ast.body[0].declarations[0].init.async;
     }
 },{
+    desc: "Parenthesized async arrow is a call",
+    code: "var a = async(()=>0)",
+    pass: function (ast) {
+        return ast.body[0].declarations[0].init.type==='CallExpression';
+    }
+},{
     desc: "Async set method fails",
     code: "var a = {async set x(){}}",
     pass: function (ex) {
