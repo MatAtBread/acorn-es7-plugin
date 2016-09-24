@@ -195,31 +195,34 @@ function asyncAwaitPlugin (parser,options){
                         n = this.finishNodeAt(n,'AwaitExpression', rhs.end, rhs.loc && rhs.loc.end) ;
                         es7check(n) ;
                         return n ;
-                    } else
-                        // NON-STANDARD EXTENSION iff. options.awaitAnywhere is true,
-                        // an 'AwaitExpression' is allowed anywhere the token 'await'
-                        // could not be an identifier with the name 'await'.
+                    }
+                    // NON-STANDARD EXTENSION iff. options.awaitAnywhere is true,
+                    // an 'AwaitExpression' is allowed anywhere the token 'await'
+                    // could not be an identifier with the name 'await'.
 
-                        // Look-ahead to see if this is really a property or label called async or await
-                        if (st.input.slice(r.end).match(atomOrPropertyOrLabel))
-                            return r ; // This is a valid property name or label
+                    // Look-ahead to see if this is really a property or label called async or await
+                    if (st.input.slice(r.end).match(atomOrPropertyOrLabel))
+                        return r ; // This is a valid property name or label
 
-                        if (typeof options==="object" && options.awaitAnywhere) {
-                            start = st.start ;
-                            rhs = subParse(this,start-4).parseExprSubscripts() ;
-                            if (rhs.end<=start) {
-                                rhs = subParse(this,start).parseExprSubscripts() ;
-                                n.operator = 'await' ;
-                                n.argument = rhs ;
-                                n = this.finishNodeAt(n,'AwaitExpression', rhs.end, rhs.loc && rhs.loc.end) ;
-                                st.pos = rhs.end;
-                                this.end = rhs.end ;
-                                this.endLoc = rhs.endLoc ;
-                                this.next();
-                                es7check(n) ;
-                                return n ;
-                            }
+                    if (typeof options==="object" && options.awaitAnywhere) {
+                        start = st.start ;
+                        rhs = subParse(this,start-4).parseExprSubscripts() ;
+                        if (rhs.end<=start) {
+                            rhs = subParse(this,start).parseExprSubscripts() ;
+                            n.operator = 'await' ;
+                            n.argument = rhs ;
+                            n = this.finishNodeAt(n,'AwaitExpression', rhs.end, rhs.loc && rhs.loc.end) ;
+                            st.pos = rhs.end;
+                            this.end = rhs.end ;
+                            this.endLoc = rhs.endLoc ;
+                            this.next();
+                            es7check(n) ;
+                            return n ;
                         }
+                    }
+
+                    if (this.options.sourceType === 'module')
+                        return this.raise(r.start,"'await' is reserved within modules") ;
                 }
             }
             return r ;
@@ -283,7 +286,7 @@ function asyncAwaitPlugin (parser,options){
             return r ;
         }
     }) ;
-    
+
     parser.extend("parsePropertyValue",function(base){
         return function (prop, isPattern, isGenerator, startPos, startLoc, refDestructuringErrors) {
             var st, wasAsync ;

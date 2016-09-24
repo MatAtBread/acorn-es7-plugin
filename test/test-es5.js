@@ -27,12 +27,14 @@ function isAsyncFnDecl(ast) {
 }
 
 function isExprType(type) {
-    return function (ast) {
+    return function (ast, sourceType) {
         return ast.body[0].type === 'ExpressionStatement' && ast.body[0].expression.type === type;
     };
 }
 
-var tests = [{
+var tests = [
+/* Standard behaviours */
+{
     desc: "Simple async function",
     code: "async function x() { return undefined; }",
     pass: function (ast) {
@@ -45,20 +47,14 @@ var tests = [{
         return ast.body[0].body.body[0].expression.type === 'AwaitExpression' && ast.body[0].body.body[1].expression.type === 'AwaitExpression';
     }
 },{
-    desc: "Await in function is identifier",
+    desc: "Await in function is identifier in 'script', illegal in 'module'",
     code: "function x() { await(undefined); }",
-    pass: function (ast) {
-        return ast.body[0].body.body[0].expression.callee.name === 'await';
+    pass: function (ast,scriptType) {
+        return scriptType === 'script'?ast.body[0].body.body[0].expression.callee.name === 'await':ast.indexOf("(1:15)")>=0;
     }
 },{
     desc: "Async method",
     code: "var a = {async x(){}}",
-    pass: function (ast) {
-        return ast.body[0].declarations[0].init.properties[0].value.async;
-    }
-},{
-    desc: "Async get method",
-    code: "var a = {async get x(){}}",
     pass: function (ast) {
         return ast.body[0].declarations[0].init.properties[0].value.async;
     }
@@ -75,34 +71,22 @@ var tests = [{
         return ast.body[0].declarations[0].init.type==='CallExpression';
     }
 },{
-    desc: "Async set method fails",
-    code: "var a = {async set x(){}}",
-    pass: function (ex) {
-        return ex === "'set <member>(value)' cannot be be async (1:15)";
-    }
-},{
-    desc: "Async constructor fails",
-    code: "var a = {async constructor(){}}",
-    pass: function (ex) {
-        return ex === "'constructor()' cannot be be async (1:15)";
-    }
-},{
     desc: "Await declaration fails in async function",
     code: "async function x() { var await; }",
-    pass: function (ex) {
-        return ex === "'await' is reserved within async functions (1:25)";
+    pass: function (ex, scriptType) {
+      return ex.indexOf("(1:25)")>=0// === "'await' is reserved within async functions (1:25)":ex==="The keyword 'await' is reserved (1:25)";
     }
 },{
     desc: "Await function declaration fails in async function",
     code: "async function x() { function await() {} }",
-    pass: function (ex) {
-        return ex === "'await' is reserved within async functions (1:30)";
+    pass: function (ex, scriptType) {
+      return ex.indexOf("(1:30)")>=0//scriptType === 'script'?ex === "'await' is reserved within async functions (1:25)":ex==="The keyword 'await' is reserved (1:30)";
     }
 },{
     desc: "Await reference fails in async function",
     code: "async function x() { return 1+await; }",
     pass: function (ex) {
-        return ex === "Unexpected token (1:35)";
+        return !!ex.match(/\(1:3[05]\)/);
     }
 },{
     desc: "{code} is an async FunctionDeclaration",
@@ -128,6 +112,26 @@ var tests = [{
     desc: "{code} is a reference to 'async' and a sync FunctionDeclaration",
     code: "async /*\n*/\nfunction x(){}",
     pass: isIdentThenFnDecl
+},
+/* Extended syntax behaviour for Nodent */
+{
+    desc: "Async get method",
+    code: "var a = {async get x(){}}",
+    pass: function (ast) {
+        return ast.body[0].declarations[0].init.properties[0].value.async;
+    }
+},{
+    desc: "Async set method fails",
+    code: "var a = {async set x(){}}",
+    pass: function (ex) {
+        return ex === "'set <member>(value)' cannot be be async (1:15)";
+    }
+},{
+    desc: "Async constructor fails",
+    code: "var a = {async constructor(){}}",
+    pass: function (ex) {
+        return ex === "'constructor()' cannot be be async (1:15)";
+    }
 },{
     /* Valid combinations of await options; none, just inAsyncFunction, or just awaitAnywhere */
     desc: "{code} is an AwaitExpression when inAsyncFunction option is true",
@@ -149,7 +153,9 @@ var tests = [{
     options: {
         awaitAnywhere: true
     },
-    pass: isExprType('CallExpression')
+    pass: function(ast,sourceType) {
+        return sourceType==='module'?ast==="'await' is reserved within modules (1:0)" :isExprType('CallExpression')(ast)
+    }
 },{
     desc: "{code} is an AwaitExpression when awaitAnywhere option is true",
     code: "await x",
@@ -160,12 +166,14 @@ var tests = [{
 },{
     desc: "{code} is a CallExpression when inAsyncFunction and awaitAnywhere option are false",
     code: "await(x)",
-    pass: isExprType('CallExpression')
+    pass: function(ast,sourceType) {
+        return sourceType==='module'?ast==="'await' is reserved within modules (1:0)" :isExprType('CallExpression')(ast)
+    }
 },{
     desc: "{code} is a SyntaxError when inAsyncFunction and awaitAnywhere option are false",
     code: "await x",
-    pass: function (ex) {
-        return ex === "Unexpected token (1:6)";
+    pass: function (ex, sourceType) {
+        return sourceType==='module' ? ex === "'await' is reserved within modules (1:0)" : ex === "Unexpected token (1:6)";
     }
 }];
 var out = {
@@ -194,10 +202,10 @@ tests.forEach(function (test, idx) {
         };
         var prefix = idx + testNumber + " (" + scriptType + ", acorn v" + acorn.version+")\t" ;
         try {
-            console.log(prefix, desc, out[pass(parse(test.code, test.options, scriptType))]);
+            console.log(prefix, desc, out[pass(parse(test.code, test.options, scriptType),scriptType)]);
         } catch (ex) {
             try {
-                console.log(prefix, desc, ex.message.cyan, out[pass(ex.message)]);
+                console.log(prefix, desc, ex.message.cyan, out[pass(ex.message,scriptType)]);
             } catch (ex) {
                 console.log(prefix, desc, ex.message.magenta, out[false]);
             }
@@ -205,8 +213,7 @@ tests.forEach(function (test, idx) {
     });
 }) ;
 console.log('');
-if (results.true) 
+if (results.true)
     console.log((results.true + " of " + tests.length*2 + " tests passed").green);
-if (results.false) 
+if (results.false)
     console.log((results.false + " of " + tests.length*2 + " tests failed").red);
-
