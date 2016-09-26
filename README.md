@@ -102,8 +102,14 @@ When using the plugin, you can supply an object in place of the 'true' flag with
 | inAsyncFunction | Parse the code as if it is the body of an `async function`. This means `await` cannot be an identifier and is always an AwaitExpression, even if the argument is parenthesized. Should not be used with the awaitAnywhere option |
 | asyncExits | Allow the additional sequences `async return <optional-expression>` and `async throw <expression>`. These sequences are used with [nodent](https://github.com/MatAtBread/nodent). In each case, as with async functions, a standard ReturnStatement (or ThrowStatement) node is generated, with an additional member 'async' set to true.
 
+The parser also accepts async getters in object literals and classes, which is currently disallowed by the ES7 specification.
+
 Changelog
 =========
+
+25-Sep-16: v1.1.0
+
+- Update to work with acorn v4 if present. Note that `async` and `await` are fully parsed by acorn v4. The only use case for the plugin with acorn v4 is with the flags above which are enable specific parsing modes. 
 
 24-Sep-16: v1.0.18
 
