@@ -143,20 +143,34 @@ function asyncAwaitPlugin (parser,options){
         }
     }) ;
 
+    var allowedPropValues = {
+        undefined:true,
+        get:true,
+        set:true,
+        static:true,
+        async:true,
+        constructor:true
+    };
     parser.extend("parsePropertyName",function(base){
         return function (prop) {
             var st = state(this) ;
             var key = base.apply(this,arguments) ;
-            if (key.type === "Identifier" && key.name === "async" && !hasLineTerminatorBeforeNext(st, key.end)) {
+
+            if (allowedPropValues[this.value])
+                return key ;
+
+            if (key.type === "Identifier" && (key.name === "async" || key.name === "get") && !hasLineTerminatorBeforeNext(st, key.end)) {
                 // Look-ahead to see if this is really a property or label called async or await
                 if (!st.input.slice(key.end).match(atomOrPropertyOrLabel)){
-                    st.__isAsyncProp = true ;
-                    key = base.apply(this,arguments) ;
-                    if (key.type==='Identifier') {
-                        if (key.name==='constructor')
-                            this.raise(key.start,"'constructor()' cannot be be async") ;
-                        else if (key.name==='set')
-                            this.raise(key.start,"'set <member>(value)' cannot be be async") ;
+                    if (prop.kind === 'set') 
+                        this.raise(key.start,"'set <member>(value)' cannot be be async") ;
+                    else {
+                        st.__isAsyncProp = true ;
+                        key = base.apply(this,arguments) ;
+                        if (key.type==='Identifier') {
+                            if (key.name==='set')
+                                this.raise(key.start,"'set <member>(value)' cannot be be async") ;
+                        }
                     }
                 }
             }
