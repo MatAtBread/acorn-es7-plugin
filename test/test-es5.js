@@ -57,7 +57,7 @@ var tests = [
         return scriptType === 'script'?ast.body[0].body.body[0].expression.callee.name === 'await':ast.indexOf("(1:15)")>=0;
     }
 },{
-    desc: "Async method",
+    desc: "Async method {code}",
     code: "var a = {async x(){}}",
     pass: function (ast) {
         return ast.body[0].declarations[0].init.properties[0].value.async;
@@ -150,7 +150,7 @@ var tests = [
         return ex === "'set <member>(value)' cannot be be async (1:15)" || ex === "Unexpected token (1:19)";
     }
 },{
-    desc: "Async setter fails",
+    desc: "Deprecated async setter fails (use 'async set x')",
     code: "var a = {set async x(y){}}",
     pass: function (ex) {
         return ex === "'set <member>(value)' cannot be be async (1:13)" || ex === "Unexpected token (1:19)";
@@ -164,7 +164,7 @@ var tests = [
             && (props[1].kind === 'init' && props[1].key.name==='set' && props[1].value.async);
     }
 },{
-    desc: "{code} are a getters/setters, not methods",
+    desc: "{code} [deprecated - use async get/set] are a getters/setters, not methods",
     code: "var a = {get async(){},set async(x){}}",
     pass: function (ast) {
         var props = ast.body[0].declarations[0].init.properties ;
@@ -181,14 +181,14 @@ var tests = [
 /* Extended syntax behaviour for Nodent */
 {
     desc: "Nodent:".grey+" In {code}, x is an async getter",
-    code: "var a = {async get x(){ await 0}}",
+    code: "var a = {async get x(){ await 0 }}",
     pass: function (ast) {
         return ast.body[0].declarations[0].init.properties[0].value.async 
             && ast.body[0].declarations[0].init.properties[0].value.body.body[0].expression.type==='AwaitExpression';
     }
 },{
     desc: "Nodent:".grey+" In {code}, x is an async getter",
-    code: "var a = {get async x(){ await(0) }}",
+    code: "var a = {async get x(){ await(0) }}",
     pass: function (ast) {
         return ast.body[0].declarations[0].init.properties[0].value.async 
             && ast.body[0].declarations[0].init.properties[0].value.body.body[0].expression.type==='AwaitExpression';
@@ -238,7 +238,7 @@ var results = {
 };
 
 tests.forEach(function (test, idx) {
-    ['script'/*,'module'*/].forEach(function(scriptType){
+    ['script','module'].forEach(function(scriptType){
         var code = test.code.replace(/\n/g, ' <linefeed> ');
         var desc = test.desc.replace('{code}', code.yellow);
         var pass = function () {

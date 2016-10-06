@@ -268,16 +268,22 @@ function asyncAwaitPlugin (parser,options){
             if (key.type === "Identifier" && key.name === "async" && !hasLineTerminatorBeforeNext(st, key.end)) {
                 // Look-ahead to see if this is really a property or label called async or await
                 if (!st.input.slice(key.end).match(atomOrPropertyOrLabel)){
-                    es7check(prop) ;
-                    if (prop.kind === 'set') 
-                        this.raise(key.start,"'set <member>(value)' cannot be be async") ;
-                    
-                    key = base.apply(this,arguments) ;
-                    if (key.type==='Identifier') {
-                        if (key.name==='set')
+                    // Cheese - eliminate the cases 'async get(){}' and async set(){}'
+                    if (st.input.slice(key.end).match(/\s*(get|set)\s*\(/)) {
+                        key = base.apply(this,arguments) ;
+                        prop.__asyncValue = true ;
+                    } else {
+                        es7check(prop) ;
+                        if (prop.kind === 'set') 
                             this.raise(key.start,"'set <member>(value)' cannot be be async") ;
+                        
+                        key = base.apply(this,arguments) ;
+                        if (key.type==='Identifier') {
+                            if (key.name==='set')
+                                this.raise(key.start,"'set <member>(value)' cannot be be async") ;
+                        }
+                        prop.__asyncValue = true ;
                     }
-                    prop.__asyncValue = true ;
                 }
             }
             return key;
