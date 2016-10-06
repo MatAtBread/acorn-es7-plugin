@@ -1,7 +1,7 @@
 var NotAsync = {} ;
 var asyncExit = /^async[\t ]+(return|throw)/ ;
 var asyncFunction = /^async[\t ]+function/ ;
-var atomOrPropertyOrLabel = /^\s*[):;]/ ;
+var atomOrPropertyOrLabel = /^\s*[():;]/ ;
 var removeComments = /([^\n])\/\*(\*(?!\/)|[^\n*])*\*\/([^\n])/g ;
 
 function hasLineTerminatorBeforeNext(st, since) {
@@ -255,6 +255,12 @@ function asyncAwaitPlugin (parser,options){
             }
     }) ;
 
+    var allowedPropSpecifiers = {
+        get:true,
+        set:true,
+        async:true
+    };
+    
     parser.extend("parsePropertyName",function(base){
         return function (prop) {
             var st = state(this) ;
@@ -263,11 +269,12 @@ function asyncAwaitPlugin (parser,options){
                 // Look-ahead to see if this is really a property or label called async or await
                 if (!st.input.slice(key.end).match(atomOrPropertyOrLabel)){
                     es7check(prop) ;
+                    if (prop.kind === 'set') 
+                        this.raise(key.start,"'set <member>(value)' cannot be be async") ;
+                    
                     key = base.apply(this,arguments) ;
                     if (key.type==='Identifier') {
-                        if (key.name==='constructor')
-                            this.raise(key.start,"'constructor()' cannot be be async") ;
-                        else if (key.name==='set')
+                        if (key.name==='set')
                             this.raise(key.start,"'set <member>(value)' cannot be be async") ;
                     }
                     prop.__asyncValue = true ;
@@ -281,6 +288,8 @@ function asyncAwaitPlugin (parser,options){
         return function (classBody, method, isGenerator) {
             var st, wasAsync ;
             if (method.__asyncValue) {
+                if (method.kind==='constructor')
+                    this.raise(method.start,"class constructor() cannot be be async") ;
                 st = state(this) ;
                 wasAsync = st.inAsyncFunction ;
                 st.inAsyncFunction = true ;

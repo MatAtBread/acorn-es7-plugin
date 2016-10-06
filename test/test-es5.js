@@ -141,7 +141,7 @@ var tests = [
     desc: "Async class constructor fails",
     code: "class a {async constructor(){}}",
     pass: function (ex) {
-        return ex === "class constructor() cannot be be async (1:15)" || ex === "Constructor can't be an async method (1:15)";
+        return !!ex.match(/class constructor\(\) cannot be be async \(1:(15|9)\)/) || ex === "Constructor can't be an async method (1:15)";
     }
 },{
     desc: "Async setter fails",
@@ -238,7 +238,7 @@ var results = {
 };
 
 tests.forEach(function (test, idx) {
-    ['script','module'].forEach(function(scriptType){
+    ['script'/*,'module'*/].forEach(function(scriptType){
         var code = test.code.replace(/\n/g, ' <linefeed> ');
         var desc = test.desc.replace('{code}', code.yellow);
         var pass = function () {
@@ -254,6 +254,7 @@ tests.forEach(function (test, idx) {
                 console.log(prefix, desc, ex.message.cyan, out[pass(ex.message,scriptType)]);
             } catch (ex) {
                 console.log(prefix, desc, ex.message.magenta, out[false]);
+                results.false += 1;
             }
         }
     });
