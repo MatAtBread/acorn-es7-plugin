@@ -207,8 +207,11 @@ function asyncAwaitPlugin (parser,options){
                     // could not be an identifier with the name 'await'.
 
                     // Look-ahead to see if this is really a property or label called async or await
-                    if (st.input.slice(r.end).match(atomOrPropertyOrLabel))
+                    if (st.input.slice(r.end).match(atomOrPropertyOrLabel)) {
+                        if (!options.awaitAnywhere && this.options.sourceType === 'module')
+                            return this.raise(r.start,"'await' is reserved within modules") ;
                         return r ; // This is a valid property name or label
+                    }
 
                     if (typeof options==="object" && options.awaitAnywhere) {
                         start = st.start ;

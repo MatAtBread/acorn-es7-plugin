@@ -107,6 +107,21 @@ The parser also accepts async getters in object literals and classes, which is c
 Changelog
 =========
 
+07-Oct-16: v1.1.1
+
+- Fix disambiguation of async, get and set tokens (and add tests) when defining object properties:
+
+| Code	| Interpretation
+|-----------------------|-------------------------|
+|	`get async(){}`		|	Is a standard ES6 getter called 'async'
+|	`set async(v){}`	|	Is a standard ES6 setter called 'async'
+|	`async get(...){}`	|	Is a standard ES7 async method called 'get'
+|	`async set(...){}`	|	Is a standard ES7 async method called 'set'
+|	`async get x(){}`	|	Is an extension that defines an async getter called 'x'
+|	`get async x(){}`	|	Is an extension that defines an async getter called 'x', but is deprecated (`async` should proceed `get`)
+
+In previous version of the plugin, the standard ES7 constructs were hidden by the plugin extensions and a SyntaxError was incorrectly thrown
+
 25-Sep-16: v1.1.0
 
 - Update to work with acorn v4 if present. Note that `async` and `await` are fully parsed by acorn v4. The only use case for the plugin with acorn v4 is with the flags above which are enable specific parsing modes. 
