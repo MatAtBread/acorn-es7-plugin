@@ -222,6 +222,40 @@ var tests = [
             && ast.body[0].declarations[0].init.properties[0].value.body.body[0].expression.type==='AwaitExpression';
     }
 },{
+    desc: "Nodent:".grey+" In {code}, x is an sync getter",
+    code: "class a {get x(){}}",
+    pass: function (ast) {
+        return !ast.body[0].body.body[0].value.async ; 
+    }
+},{
+    desc: "Nodent:".grey+" In {code}, x is an async getter",
+    code: "class a {async get x(){ await 0 }}",
+    pass: function (ast) {
+        return ast.body[0].body.body[0].value.async 
+            && ast.body[0].body.body[0].value.body.body[0].expression.type==='AwaitExpression';
+    }
+},{
+    desc: "Nodent:".grey+" In {code}, x is an async getter",
+    code: "class a {async get x(){ await(0) }}",
+    pass: function (ast) {
+        return ast.body[0].body.body[0].value.async 
+            && ast.body[0].body.body[0].value.body.body[0].expression.type==='AwaitExpression';
+    }
+},{
+    desc: "Nodent:".grey+" In {code} (deprecated), x is an async getter",
+    code: "class a {get async x(){ await 0 }}",
+    pass: function (ast) {
+        return ast.body[0].body.body[0].value.async 
+            && ast.body[0].body.body[0].value.body.body[0].expression.type==='AwaitExpression';
+    }
+},{
+    desc: "Nodent:".grey+" In {code} (deprecated), x is an async getter",
+    code: "class a {get async x(){ await(0) }}",
+    pass: function (ast) {
+        return ast.body[0].body.body[0].value.async 
+            && ast.body[0].body.body[0].value.body.body[0].expression.type==='AwaitExpression';
+    }
+},{
     desc: "Nodent:".grey+" {code} is an AwaitExpression when inAsyncFunction option is true",
     code: "await(x)",
     options: {
@@ -250,6 +284,8 @@ var tests = [
     },
     pass: isExprType('AwaitExpression')
 }];
+// TODO: Add tests for asyncExits, noAsyncGetters
+
 var out = {
     true: "pass".green,
     false: "fail".red

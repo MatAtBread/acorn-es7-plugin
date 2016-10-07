@@ -14,29 +14,16 @@ function test(regex,st,noComment) {
     return regex.test(src);
 }
 
-/* Return the object holding the parser's 'State'. This is different between acorn ('this')
- * and babylon ('this.state') */
-function state(p) {
-    if (('state' in p) && p.state.constructor && p.state.constructor.name==='State')
-        return p.state ; // Probably babylon
-    return p ; // Probably acorn
-}
-
 /* Create a new parser derived from the specified parser, so that in the
  * event of an error we can back out and try again */
 function subParse(parser, pos, extensions) {
-    // NB: The Babylon constructor does NOT expect 'pos' as an argument, and so
-    // the input needs truncation at the start position, however at present
-    // this doesn't work nicely as all the node location/start/end values
-    // are therefore offset. Consequently, this plug-in is NOT currently working
-    // with the (undocumented) Babylon plug-in interface.
     var p = new parser.constructor(parser.options, parser.input, pos);
     if (extensions)
         for (var k in extensions)
             p[k] = extensions[k] ;
 
-    var src = state(parser) ;
-    var dest = state(p) ;
+    var src = parser ;
+    var dest = p ;
     ['inFunction','inAsync','inGenerator','inModule'].forEach(function(k){
         if (k in src)
             dest[k] = src[k] ;
@@ -61,16 +48,11 @@ function asyncAwaitPlugin (parser,options){
 
     parser.extend("parseStatement",function(base){
         return function (declaration, topLevel) {
-            var st = state(this) ;
-            var start = st.start;
-            var startLoc = st.startLoc;
-            if (st.type.label==='name') {
-                if ((options.asyncExits) && test(asyncExit,st)) {
+            var start = this.start;
+            var startLoc = this.startLoc;
+            if (this.type.label==='name') {
+                if ((options.asyncExits) && test(asyncExit,this)) {
                     // TODO: Ensure this function is itself nested in an async function or Method
-
-                    /*if (st.inAsync) {
-                        this.raise(start,"async return/throw only valid in function() within async function()") ;
-                    }*/
                     this.next() ;
 
                     var r = this.parseStatement(declaration, topLevel) ;
@@ -96,18 +78,17 @@ function asyncAwaitPlugin (parser,options){
     parser.extend("parseExprAtom",function(base){
         var NotAsync = {};
         return function(refShorthandDefaultPos){
-            var st = state(this) ;
-            var start = st.start ;
-            var startLoc = st.startLoc;
+            var start = this.start ;
+            var startLoc = this.startLoc;
 
             var rhs,r = base.apply(this,arguments);
 
             if (r.type==='Identifier') {
-                if (r.name==='await' && !st.inAsync) {
+                if (r.name==='await' && !this.inAsync) {
                     if (options.awaitAnywhere) {
                         var n = this.startNodeAt(r.start, r.loc && r.loc.start);
 
-                        start = st.start ;
+                        start = this.start ;
 
                         var parseHooks = {
                             raise:function(){
@@ -125,7 +106,7 @@ function asyncAwaitPlugin (parser,options){
                                 rhs = subParse(this,start,parseHooks).parseExprSubscripts() ;
                                 n.argument = rhs ;
                                 n = this.finishNodeAt(n,'AwaitExpression', rhs.end, rhs.loc && rhs.loc.end) ;
-                                st.pos = rhs.end;
+                                this.pos = rhs.end;
                                 this.end = rhs.end ;
                                 this.endLoc = rhs.endLoc ;
                                 this.next();
@@ -153,19 +134,18 @@ function asyncAwaitPlugin (parser,options){
     };
     parser.extend("parsePropertyName",function(base){
         return function (prop) {
-            var st = state(this) ;
             var prevName = prop.key && prop.key.name ;
             var key = base.apply(this,arguments) ;
             if (allowedPropValues[this.value])
                 return key ;
 
-            if (key.type === "Identifier" && (key.name === "async" || prevName === "async") && !hasLineTerminatorBeforeNext(st, key.end)) {
+            if (key.type === "Identifier" && (key.name === "async" || prevName === "async") && !hasLineTerminatorBeforeNext(this, key.end)) {
                 // Look-ahead to see if this is really a property or label called async or await
-                if (!st.input.slice(key.end).match(atomOrPropertyOrLabel)){
+                if (!this.input.slice(key.end).match(atomOrPropertyOrLabel)){
                     if (prop.kind === 'set' || key.name === 'set') 
                         this.raise(key.start,"'set <member>(value)' cannot be be async") ;
                     else {
-                        st.__isAsyncProp = true ;
+                        this.__isAsyncProp = true ;
                         key = base.apply(this,arguments) ;
                         if (key.type==='Identifier') {
                             if (key.name==='set')
@@ -180,15 +160,14 @@ function asyncAwaitPlugin (parser,options){
 
     parser.extend("parseFunctionBody",function(base){
         return function (node, isArrowFunction) {
-            var st = state(this) ;
-            var wasAsync = st.inAsync ;
-            if (st.__isAsyncProp) {
+            var wasAsync = this.inAsync ;
+            if (this.__isAsyncProp) {
                 node.async = true ;
-                st.inAsync = true ;
-                delete st.__isAsyncProp ;
+                this.inAsync = true ;
+                delete this.__isAsyncProp ;
             }
             var r = base.apply(this,arguments) ;
-            st.inAsync = wasAsync ;
+            this.inAsync = wasAsync ;
             return r ;
         }
     }) ;
