@@ -154,15 +154,15 @@ function asyncAwaitPlugin (parser,options){
     parser.extend("parsePropertyName",function(base){
         return function (prop) {
             var st = state(this) ;
+            var prevName = prop.key && prop.key.name ;
             var key = base.apply(this,arguments) ;
-
             if (allowedPropValues[this.value])
                 return key ;
 
-            if (key.type === "Identifier" && (key.name === "async" || key.name === "get") && !hasLineTerminatorBeforeNext(st, key.end)) {
+            if (key.type === "Identifier" && (key.name === "async" || prevName === "async") && !hasLineTerminatorBeforeNext(st, key.end)) {
                 // Look-ahead to see if this is really a property or label called async or await
                 if (!st.input.slice(key.end).match(atomOrPropertyOrLabel)){
-                    if (prop.kind === 'set') 
+                    if (prop.kind === 'set' || key.name === 'set') 
                         this.raise(key.start,"'set <member>(value)' cannot be be async") ;
                     else {
                         st.__isAsyncProp = true ;

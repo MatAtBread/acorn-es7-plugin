@@ -69,8 +69,14 @@ var tests = [
         return ast.body[0].declarations[0].init.async;
     }
 },{
+    desc: "Abbreviated async arrow",
+    code: "var a = async b=>-b",
+    pass: function (ast) {
+        return ast.body[0].declarations[0].init.async;
+    }
+},{
     desc: "Parenthesized async arrow is a call",
-    code: "var a = async(()=>0)",
+    code: "var a = async(b=>0)",
     pass: function (ast) {
         return ast.body[0].declarations[0].init.type==='CallExpression';
     }
@@ -125,6 +131,12 @@ var tests = [
     code: "async /*\n*/\nfunction x(){}",
     pass: isIdentThenFnDecl
 },{
+    desc: "{code} is a SyntaxError (when inAsyncFunction and awaitAnywhere option are defaults)",
+    code: "await x",
+    pass: function (ex, sourceType) {
+        return sourceType==='module' ? !!ex.match(/\(1:0\)/) : ex === "Unexpected token (1:6)";
+    }
+},{
     desc: "{code} is a CallExpression in scripts, and a SyntaxError in modules",
     code: "await(x)",
     pass: function(ast,sourceType) {
@@ -156,6 +168,14 @@ var tests = [
         return ex === "'set <member>(value)' cannot be be async (1:13)" || ex === "Unexpected token (1:19)";
     }
 },{
+    desc: "{code} getters/setters are not async",
+    code: "var a = {get x(){},set y(z){}}",
+    pass: function (ast) {
+        var props = ast.body[0].declarations[0].init.properties ;
+        return (props[0].kind === 'get' && props[0].key.name==='x' && !props[0].value.async) 
+            && (props[1].kind === 'set' && props[1].key.name==='y' && !props[1].value.async);
+    }
+},{
     desc: "{code} are methods, not getters/setters",
     code: "var a = {async get(){},async set(){}}",
     pass: function (ast) {
@@ -164,18 +184,12 @@ var tests = [
             && (props[1].kind === 'init' && props[1].key.name==='set' && props[1].value.async);
     }
 },{
-    desc: "{code} [deprecated - use async get/set] are a getters/setters, not methods",
+    desc: "{code} are a getters/setters, not methods",
     code: "var a = {get async(){},set async(x){}}",
     pass: function (ast) {
         var props = ast.body[0].declarations[0].init.properties ;
         return (props[0].kind === 'get' && props[0].key.name==='async' && !props[0].value.async)
             && (props[1].kind === 'set' && props[1].key.name==='async' && !props[1].value.async);
-    }
-},{
-    desc: "{code} is a SyntaxError when inAsyncFunction and awaitAnywhere option are false",
-    code: "await x",
-    pass: function (ex, sourceType) {
-        return sourceType==='module' ? !!ex.match(/\(1:0\)/) : ex === "Unexpected token (1:6)";
     }
 },
 /* Extended syntax behaviour for Nodent */
@@ -189,6 +203,20 @@ var tests = [
 },{
     desc: "Nodent:".grey+" In {code}, x is an async getter",
     code: "var a = {async get x(){ await(0) }}",
+    pass: function (ast) {
+        return ast.body[0].declarations[0].init.properties[0].value.async 
+            && ast.body[0].declarations[0].init.properties[0].value.body.body[0].expression.type==='AwaitExpression';
+    }
+},{
+    desc: "Nodent:".grey+" In {code} (deprecated), x is an async getter",
+    code: "var a = {get async x(){ await 0 }}",
+    pass: function (ast) {
+        return ast.body[0].declarations[0].init.properties[0].value.async 
+            && ast.body[0].declarations[0].init.properties[0].value.body.body[0].expression.type==='AwaitExpression';
+    }
+},{
+    desc: "Nodent:".grey+" In {code} (deprecated), x is an async getter",
+    code: "var a = {get async x(){ await(0) }}",
     pass: function (ast) {
         return ast.body[0].declarations[0].init.properties[0].value.async 
             && ast.body[0].declarations[0].init.properties[0].value.body.body[0].expression.type==='AwaitExpression';
