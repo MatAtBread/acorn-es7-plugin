@@ -136,27 +136,43 @@ function asyncAwaitPlugin (parser,options){
         return function (prop) {
             var prevName = prop.key && prop.key.name ;
             var key = base.apply(this,arguments) ;
+            if (this.value==='get') {
+                prop.__maybeStaticAsyncGetter = true ;
+            }
             if (allowedPropValues[this.value])
                 return key ;
 
-            if (key.type === "Identifier" && (key.name === "async" || prevName === "async") && !hasLineTerminatorBeforeNext(this, key.end)) {
+            if (key.type === "Identifier" && (key.name === "async" || prevName === "async") && !hasLineTerminatorBeforeNext(this, key.end) 
                 // Look-ahead to see if this is really a property or label called async or await
-                if (!this.input.slice(key.end).match(atomOrPropertyOrLabel)){
-                    if (prop.kind === 'set' || key.name === 'set') 
-                        this.raise(key.start,"'set <member>(value)' cannot be be async") ;
-                    else {
-                        this.__isAsyncProp = true ;
-                        key = base.apply(this,arguments) ;
-                        if (key.type==='Identifier') {
-                            if (key.name==='set')
-                                this.raise(key.start,"'set <member>(value)' cannot be be async") ;
-                        }
+                && !this.input.slice(key.end).match(atomOrPropertyOrLabel)) {
+                if (prop.kind === 'set' || key.name === 'set') 
+                    this.raise(key.start,"'set <member>(value)' cannot be be async") ;
+                else {
+                    this.__isAsyncProp = true ;
+                    key = base.apply(this,arguments) ;
+                    if (key.type==='Identifier') {
+                        if (key.name==='set')
+                            this.raise(key.start,"'set <member>(value)' cannot be be async") ;
                     }
                 }
+            } else {
+                delete prop.__maybeStaticAsyncGetter ;
             }
             return key;
         };
     }) ;
+
+    parser.extend("parseClassMethod",function(base){
+        return function (classBody, method, isGenerator) {
+            var r = base.apply(this,arguments) ;
+            if (method.__maybeStaticAsyncGetter) {
+                delete method.__maybeStaticAsyncGetter ;
+                method.kind = "get" ;
+            }
+            return r ;
+        }
+    }) ;
+
 
     parser.extend("parseFunctionBody",function(base){
         return function (node, isArrowFunction) {

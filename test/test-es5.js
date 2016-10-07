@@ -184,6 +184,24 @@ var tests = [
             && (props[1].kind === 'init' && props[1].key.name==='set' && props[1].value.async);
     }
 },{
+    desc: "In {code}, x is an sync getter",
+    code: "class a {get x(){}}",
+    pass: function (ast) {
+        return ast.body[0].body.body[0].kind==="get" && !ast.body[0].body.body[0].value.async && !ast.body[0].body.body[0].static ; 
+    }
+},{
+    desc: "In {code}, x is an static sync getter",
+    code: "class a {static get x(){}}",
+    pass: function (ast) {
+        return ast.body[0].body.body[0].kind==="get" && !ast.body[0].body.body[0].value.async && ast.body[0].body.body[0].static ; 
+    }
+},{
+    desc: "In {code}, x is an static sync method",
+    code: "class a {static async x(){}}",
+    pass: function (ast) {
+        return ast.body[0].body.body[0].kind==="method" && ast.body[0].body.body[0].value.async && ast.body[0].body.body[0].static ; 
+    }
+},{
     desc: "{code} are a getters/setters, not methods",
     code: "var a = {get async(){},set async(x){}}",
     pass: function (ast) {
@@ -222,12 +240,6 @@ var tests = [
             && ast.body[0].declarations[0].init.properties[0].value.body.body[0].expression.type==='AwaitExpression';
     }
 },{
-    desc: "Nodent:".grey+" In {code}, x is an sync getter",
-    code: "class a {get x(){}}",
-    pass: function (ast) {
-        return !ast.body[0].body.body[0].value.async ; 
-    }
-},{
     desc: "Nodent:".grey+" In {code}, x is an async getter",
     code: "class a {async get x(){ await 0 }}",
     pass: function (ast) {
@@ -254,6 +266,18 @@ var tests = [
     pass: function (ast) {
         return ast.body[0].body.body[0].value.async 
             && ast.body[0].body.body[0].value.body.body[0].expression.type==='AwaitExpression';
+    }
+},{
+    desc: "Nodent:".grey+" In {code}, x is an static async getter",
+    code: "class a {static async get x(){}}",
+    pass: function (ast) {
+        return ast.body[0].body.body[0].kind==="get" && ast.body[0].body.body[0].value.async && ast.body[0].body.body[0].static ; 
+    }
+},{
+    desc: "Nodent:".grey+" In {code} (deprecated), x is an static async getter",
+    code: "class a {static get async x(){}}",
+    pass: function (ast) {
+        return ast.body[0].body.body[0].kind==="get" && ast.body[0].body.body[0].value.async && ast.body[0].body.body[0].static ; 
     }
 },{
     desc: "Nodent:".grey+" {code} is an AwaitExpression when inAsyncFunction option is true",
