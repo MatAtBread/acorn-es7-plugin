@@ -212,11 +212,31 @@ var tests = [
 },
 /* Extended syntax behaviour for Nodent */
 {
-    desc: "Nodent:".grey+" In {code}, x is an async getter",
-    code: "var a = {async get x(){ await 0 }}",
+    desc: "Nodent:".grey+" In {code}, get is a static method",
+    code: "class Foo { static get(v) {} }",
     pass: function (ast) {
-        return ast.body[0].declarations[0].init.properties[0].value.async 
-            && ast.body[0].declarations[0].init.properties[0].value.body.body[0].expression.type==='AwaitExpression';
+        return ast.body[0].body.body[0].type==='MethodDefinition'
+            && ast.body[0].body.body[0].key.name === 'get'
+            && ast.body[0].body.body[0].kind === "method"
+            && ast.body[0].body.body[0].static;
+    }
+},{
+    desc: "Nodent:".grey+" In {code}, get is a non-static method",
+    code: "class Foo { get(v) {} }",
+    pass: function (ast) {
+        return ast.body[0].body.body[0].type==='MethodDefinition'
+            && ast.body[0].body.body[0].key.name === 'get'
+            && ast.body[0].body.body[0].kind === "method"
+            && !ast.body[0].body.body[0].static;
+    }
+},{
+    desc: "Nodent:".grey+" In {code}, get is a non-static getter",
+    code: "class Foo { get get() {} }",
+    pass: function (ast) {
+        return ast.body[0].body.body[0].type==='MethodDefinition'
+            && ast.body[0].body.body[0].key.name === 'get'
+            && ast.body[0].body.body[0].kind === "get"
+            && !ast.body[0].body.body[0].static;
     }
 },{
     desc: "Nodent:".grey+" In {code}, x is an async getter",

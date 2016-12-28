@@ -140,7 +140,7 @@ function asyncAwaitPlugin (parser,options){
                 prop.__maybeStaticAsyncGetter = true ;
             }
             var next ;
-            if (allowedPropValues[this.value] && (next = this.input.slice(this.end).match(/\s*(\w*)/)) && next[1])
+            if (allowedPropValues[this.value])
                 return key ;
 
             if (key.type === "Identifier" && (key.name === "async" || prevName === "async") && !hasLineTerminatorBeforeNext(this, key.end) 
@@ -168,7 +168,8 @@ function asyncAwaitPlugin (parser,options){
             var r = base.apply(this,arguments) ;
             if (method.__maybeStaticAsyncGetter) {
                 delete method.__maybeStaticAsyncGetter ;
-                method.kind = "get" ;
+                if (method.key.name!=='get')
+                    method.kind = "get" ;
             }
             return r ;
         }
