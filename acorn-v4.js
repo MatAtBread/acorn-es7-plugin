@@ -139,7 +139,8 @@ function asyncAwaitPlugin (parser,options){
             if (this.value==='get') {
                 prop.__maybeStaticAsyncGetter = true ;
             }
-            if (allowedPropValues[this.value])
+            var next ;
+            if (allowedPropValues[this.value] && (next = this.input.slice(this.end).match(/\s*(\w*)/)) && next[1])
                 return key ;
 
             if (key.type === "Identifier" && (key.name === "async" || prevName === "async") && !hasLineTerminatorBeforeNext(this, key.end) 
