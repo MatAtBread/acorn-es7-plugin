@@ -107,6 +107,10 @@ The parser also accepts async getters in object literals and classes, which is c
 Changelog
 =========
 
+30-Mar-17: v1.1.7
+
+- Fix parsing of IIAFE `(async function (){  }())` with acorn v3.
+
 07-Oct-16: v1.1.1
 
 - Fix disambiguation of async, get and set tokens (and add tests) when defining object properties:

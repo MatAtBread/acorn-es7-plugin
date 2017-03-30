@@ -45,6 +45,24 @@ var tests = [
         return ast.body[0].async === true;
     }
 },{
+    desc: "Simple async function expression",
+    code: "(async function (){  })",
+    pass: function (ast) {
+        return ast.body[0].expression.async === true;
+    }
+},{
+    desc: "Async function expression call (1)",
+    code: "(async function (){  }())",
+    pass: function (ast) {
+        return ast.body[0].expression.callee.async === true;
+    }
+},{
+    desc: "Async function expression call (2)",
+    code: "(async function (){  })()",
+    pass: function (ast) {
+        return ast.body[0].expression.callee.async === true;
+    }
+},{
     desc: "Await in async is AwaitExpression",
     code: "async function x() { await(undefined); await undefined ; }",
     pass: function (ast) {

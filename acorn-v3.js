@@ -118,7 +118,7 @@ function asyncAwaitPlugin (parser,options){
         }
     }) ;
 
-    parser.extend("parseExprAtom",function(base){
+  parser.extend("parseExprAtom",function(base){
         return function(refShorthandDefaultPos){
             var start = this.start ;
             var startLoc = this.startLoc;
@@ -154,12 +154,17 @@ function asyncAwaitPlugin (parser,options){
                         rhs = subParse(this,this.start,parseHooks,true).parseExpression() ;
                         if (rhs.type==='SequenceExpression')
                             rhs = rhs.expressions[0] ;
+                        if (rhs.type === 'CallExpression')
+                            rhs = rhs.callee ;
                         if (rhs.type==='FunctionExpression' || rhs.type==='FunctionDeclaration' || rhs.type==='ArrowFunctionExpression') {
                             // Because we don't know if the top level parser supprts preserveParens, we have to re-parse
                             // without it set
                             rhs = subParse(this,this.start,parseHooks).parseExpression() ;
                             if (rhs.type==='SequenceExpression')
                                 rhs = rhs.expressions[0] ;
+                            if (rhs.type === 'CallExpression')
+                                rhs = rhs.callee ;
+                            
                             rhs.async = true ;
                             rhs.start = start;
                             rhs.loc && (rhs.loc.start = startLoc);
