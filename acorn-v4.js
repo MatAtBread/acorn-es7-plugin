@@ -94,10 +94,17 @@ module.exports = function(acorn) {
     
         parser.extend("parseFunction", function (base){
             // I wish there were a batter way of doing this. These are just the acorn v4 and v5 implementations
-            // lifted up and pit here with the test that fails an async generator removed
+            // lifted up and put here with the test that fails an async generator removed
+            
             var tt = acorn.tokTypes ;
             var reImplementation = new Function("tt","return "+base.toString().replace("ecmaVersion >= 6 && !isAsync","ecmaVersion >= 6")) ;
-            return reImplementation(tt) ;
+            
+            return function(){
+                if (options.asyncGenerator === false)
+                    return base.apply(this,arguments) ;
+                else
+                    return reImplementation(tt).apply(this,arguments) ;
+            }
         }) ;
         
         parser.extend("parseIdent",function(base){

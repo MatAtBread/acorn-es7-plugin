@@ -111,6 +111,7 @@ Changelog
 31-Mar-18: v1.2.0
 
 - Implement parsing of the experimental `for await (x of y){}`. This feature can be disabled by setting the option `forAwait` to false.
+- Implement parsing of the experimental `async function *(..){...}`. This feature can be disabled by setting the option `asyncGenerator` to false.
 
 30-Mar-17: v1.1.7
 
