@@ -1,7 +1,7 @@
 var asyncExit = /^async[\t ]+(return|throw)/ ;
 var atomOrPropertyOrLabel = /^\s*[):;]/ ;
 var removeComments = /([^\n])\/\*(\*(?!\/)|[^\n*])*\*\/([^\n])/g ;
-var maybeAwait = /[\t ]*await\W/ ;
+var maybeAwait = /^[\t ]*await\W/ ;
 
 function hasLineTerminatorBeforeNext(st, since) {
     return st.lineStart >= since;
@@ -57,7 +57,7 @@ function asyncAwaitPlugin (parser,options){
                 this.next() ;
                 isForAwait = this.type.label === 'name' && this.value === 'await' ;
                 if (!isForAwait)
-                    this.raise(then.start,"SyntaxError: Unexpected '"+this.value) ;
+                    this.raise(this.start,"Unexpected '"+this.type.value+"'") ;
             }
             var then = base.apply(this,arguments);
             if (isForAwait) {
