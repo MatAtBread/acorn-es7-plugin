@@ -263,6 +263,31 @@ var tests = [
         return !!err.match(/'for await'.*\(1:0\)/);
     }
 },
+/* async generators */
+{
+    desc: "AsyncGen: {code} is an async generator",
+    code: "async function* g(){ yield 0 ; await 1 ; }",
+    pass: function (ast) {
+        return ast.body[0].type==='FunctionDeclaration' 
+            && ast.body[0].async && ast.body[0].generator
+            && ast.body[0].body.body[0].expression.type === 'YieldExpression' 
+            && ast.body[0].body.body[1].expression.type === 'AwaitExpression' ;
+    }
+},{
+    desc: "AsyncGen: {code} is a generator",
+    code: "function *g(){ yield 0 ; }",
+    pass: function (ast) {
+        return ast.body[0].type==='FunctionDeclaration' 
+            && !ast.body[0].async && ast.body[0].generator
+            && ast.body[0].body.body[0].expression.type === 'YieldExpression' ;
+    }
+},{
+    desc: "AsyncGen: {code} is a syntax error",
+    code: "async function g(){ yield 0 }",
+    pass: function (err) {
+        return err==='Unexpected token (1:26)' || err==="The keyword 'yield' is reserved (1:20)"
+    }
+},
 
 /* Extended syntax behaviour for Nodent */
 {
