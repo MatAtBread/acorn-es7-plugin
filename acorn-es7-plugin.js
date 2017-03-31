@@ -5,8 +5,6 @@ module.exports = function(acorn) {
         acorn.plugins.asyncawait = require('./acorn-v3') ;
         break ;
     case 4:
-        acorn.plugins.asyncawait = require('./acorn-v4') ;
-        break ;
     case 5:
         acorn.plugins.asyncawait = require('./acorn-v4') ;
         break ;

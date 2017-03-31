@@ -228,6 +228,42 @@ var tests = [
             && (props[1].kind === 'set' && props[1].key.name==='async' && !props[1].value.async);
     }
 },
+/* Experimental for-await-of (see https://github.com/estree/estree/blob/master/experimental/async-iteration.md) */
+{
+    desc: "ForAwait: {code} is a for-await loop",
+    code: "for await (x of y){}",
+    pass: function (ast) {
+        return ast.body[0].type==='ForOfStatement' && ast.body[0].await;
+    }
+},{
+    desc: "ForAwait: {code} is a for-await loop",
+    code: "for await (x of y){}",
+    options:{
+        forAwait:false
+    },
+    pass: function (err) {
+        return err === 'Unexpected token (1:4)';
+    }
+},{
+    desc: "ForAwait: {code} is a for loop",
+    code: "for (x of y){}",
+    pass: function (ast) {
+        return ast.body[0].type==='ForOfStatement' && !ast.body[0].await;
+    }
+},{
+    desc: "ForAwait: {code} is a syntax error",
+    code: "for await (x in y){}",
+    pass: function (err) {
+        return !!err.match(/'for await'.*\(1:0\)/);
+    }
+},{
+    desc: "ForAwait: {code} is a syntax error",
+    code: "for await (;;){}",
+    pass: function (err) {
+        return !!err.match(/'for await'.*\(1:0\)/);
+    }
+},
+
 /* Extended syntax behaviour for Nodent */
 {
     desc: "Nodent:".grey+" In {code}, get is a static method",

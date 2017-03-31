@@ -101,11 +101,16 @@ When using the plugin, you can supply an object in place of the 'true' flag with
 | awaitAnywhere | If `await` is used outside of an async function and could not be an identifier, generate an AwaitExpression node. This typically means you can use `await` anywhere _except_ when its argument would require parentheses, as this parses to a call to 'await(....)'. Should not be used with inAsyncFunction option |
 | inAsyncFunction | Parse the code as if it is the body of an `async function`. This means `await` cannot be an identifier and is always an AwaitExpression, even if the argument is parenthesized. Should not be used with the awaitAnywhere option |
 | asyncExits | Allow the additional sequences `async return <optional-expression>` and `async throw <expression>`. These sequences are used with [nodent](https://github.com/MatAtBread/nodent). In each case, as with async functions, a standard ReturnStatement (or ThrowStatement) node is generated, with an additional member 'async' set to true.
+| forAwait | Implements the experimental specification for `for await (x of y) {}` as defined by https://github.com/estree/estree/blob/master/experimental/async-iteration.md
 
 The parser also accepts async getters in object literals and classes, which is currently disallowed by the ES7 specification.
 
 Changelog
 =========
+
+31-Mar-18: v1.2.0
+
+- Implement parsing of the experimental `for await (x of y){}`. This feature can be disabled by setting the option `forAwait` to false.
 
 30-Mar-17: v1.1.7
 

@@ -1,6 +1,7 @@
 var asyncExit = /^async[\t ]+(return|throw)/ ;
 var atomOrPropertyOrLabel = /^\s*[):;]/ ;
 var removeComments = /([^\n])\/\*(\*(?!\/)|[^\n*])*\*\/([^\n])/g ;
+var maybeAwait = /[\t ]*await\W/ ;
 
 function hasLineTerminatorBeforeNext(st, since) {
     return st.lineStart >= since;
@@ -43,6 +44,29 @@ function asyncAwaitPlugin (parser,options){
                 parser.raise(node.start,"The options awaitAnywhere and inAsyncFunction are mutually exclusive") ;
 
             return base.apply(this,arguments);
+        }
+    }) ;
+
+    parser.extend("parseForStatement",function(base){
+        return function(node){
+            if (options.forAwait === false) 
+                return base.apply(this,arguments);
+
+            var isForAwait ;
+            if (this.input.slice(this.end).match(maybeAwait)) {
+                this.next() ;
+                isForAwait = this.type.label === 'name' && this.value === 'await' ;
+                if (!isForAwait)
+                    this.raise(then.start,"SyntaxError: Unexpected '"+this.value) ;
+            }
+            var then = base.apply(this,arguments);
+            if (isForAwait) {
+                if (then.type === 'ForOfStatement')
+                    then.await = true ; // https://github.com/estree/estree/blob/master/experimental/async-iteration.md
+                else
+                    this.raise(then.start,"'for await' requires 'of' clause in the for loop") ;
+            }
+            return then ;
         }
     }) ;
 
