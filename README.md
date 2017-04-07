@@ -24,7 +24,7 @@ Using the plugin
 		// Specify use of the plugin
 		plugins:{asyncawait:true},
 		// Specify the ecmaVersion
-		ecmaVersion:7
+		ecmaVersion:8
 	}) ;
 	// Show the AST
 	console.log(JSON.stringify(ast,null,2)) ;
